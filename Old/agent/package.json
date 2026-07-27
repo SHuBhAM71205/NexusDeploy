@@ -1,0 +1,19 @@
+{
+  "name": "nexus-agent",
+  "version": "1.0.0",
+  "description": "Nexus Host-side DevOps Agent",
+  "main": "index.js",
+  "type": "module",
+  "scripts": {
+    "start": "node index.js"
+  },
+  "dependencies": {
+    "cors": "^2.8.5",
+    "express": "^4.19.2",
+    "ws": "^8.16.0"
+  },
+  "devDependencies": {
+    "esbuild": "^0.28.1",
+    "pkg": "^5.8.1"
+  }
+}
