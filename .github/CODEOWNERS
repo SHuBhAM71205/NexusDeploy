@@ -1,0 +1,27 @@
+# ------------------------------------------------------------------
+# CODEOWNERS
+#
+# This file defines code ownership for the NexusDeploy repository.
+# GitHub automatically requests reviews from the listed owners when
+# files matching the specified patterns are modified.
+#
+# More specific rules override more general ones.
+# ------------------------------------------------------------------
+
+# Default owner for the entire repository
+* @Ak-04-02
+
+# Backend
+/backend/ @SHuBhAM71205
+
+# Frontend
+/frontend/ @Dhruva Pandya
+
+# Documentation
+/docs/ @Dhruva Pandya
+
+# GitHub configuration
+/.github/ @SHuBhAM71205
+
+# Scripts
+/scripts/ @Ak-04-02
