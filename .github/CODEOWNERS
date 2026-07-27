@@ -9,19 +9,19 @@
 # ------------------------------------------------------------------
 
 # Default owner for the entire repository
-* @Ak-04-02
+* @ak04-02
 
 # Backend
 /backend/ @SHuBhAM71205
 
 # Frontend
-/frontend/ @Dhruva Pandya
+/frontend/ @dhruva2609
 
 # Documentation
-/docs/ @Dhruva Pandya
+/docs/ @dhruva2609
 
 # GitHub configuration
 /.github/ @SHuBhAM71205
 
 # Scripts
-/scripts/ @Ak-04-02
+/scripts/ @ak04-02
