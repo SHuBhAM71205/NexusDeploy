@@ -46,7 +46,9 @@ export function AppShell() {
             className="flex items-center gap-2 rounded-lg px-2 py-1.5 text-sm font-medium hover:bg-slate-100"
             type="button"
           >
-            <span className="grid size-7 place-items-center rounded-full bg-indigo-100 text-xs text-indigo-700">JD</span>
+            <span className="grid size-7 place-items-center rounded-full bg-indigo-100 text-xs text-indigo-700">
+              JD
+            </span>
             <span className="hidden sm:inline">Jane Doe</span>
             <ChevronDown size={15} aria-hidden="true" />
           </button>
