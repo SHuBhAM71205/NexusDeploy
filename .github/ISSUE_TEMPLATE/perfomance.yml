@@ -1,0 +1,94 @@
+name: Performance Issue
+description: Report slow performance, excessive resource usage, or scalability concerns.
+title: "[Performance]: "
+labels:
+  - performance
+
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for reporting a performance issue!
+
+        Please provide as much information as possible to help us investigate.
+
+  - type: textarea
+    id: issue
+    attributes:
+      label: Describe the Performance Issue
+      description: What is slow or inefficient?
+      placeholder: Deployments take significantly longer than expected...
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected Performance
+      placeholder: Deployment should finish within 30 seconds...
+    validations:
+      required: true
+
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual Performance
+      placeholder: Deployment takes 3 minutes...
+    validations:
+      required: true
+
+  - type: input
+    id: project_size
+    attributes:
+      label: Project Size (Optional)
+      placeholder: e.g. 120 files, 35 MB repository
+
+  - type: dropdown
+    id: provider
+    attributes:
+      label: Deployment Provider
+      options:
+        - Render
+        - Vercel
+        - Railway
+        - Docker
+        - Local
+        - Other
+
+  - type: dropdown
+    id: frequency
+    attributes:
+      label: How often does this occur?
+      options:
+        - Always
+        - Frequently
+        - Occasionally
+        - Only Once
+    validations:
+      required: true
+
+  - type: textarea
+    id: environment
+    attributes:
+      label: Environment Information
+      placeholder: |
+        OS:
+        Browser:
+        CPU:
+        RAM:
+        Project Version:
+    validations:
+      required: true
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs or Profiling Information
+      description: Paste logs, benchmark results, or profiler output if available.
+      render: shell
+
+  - type: textarea
+    id: additional
+    attributes:
+      label: Additional Context
+      description: Anything else that might help reproduce or investigate the issue.

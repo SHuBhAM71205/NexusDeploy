@@ -1,0 +1,14 @@
+blank_issues_enabled: false
+
+contact_links:
+  - name: 💬 Discussions
+    url: https://github.com/SHuBhAM71205/NexusDeploy/discussions
+    about: Ask questions, discuss ideas, or request general help.
+
+  - name: 📖 Documentation
+    url: https://github.com/SHuBhAM71205/NexusDeploy/README.md
+    about: Read the documentation before opening an issue.
+
+  - name: 🔒 Report a Security Vulnerability
+    url: mailto:sp710812gs@gmail.com
+    about: Please report security vulnerabilities privately. Do not create a public issue.

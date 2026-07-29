@@ -2,124 +2,126 @@
 
 ## Summary
 
-<!-- Provide a brief summary of the changes introduced by this Pull Request. -->
-
----
+<!-- Briefly describe what this Pull Request does. -->
 
 ## Related Issue
 
-<!-- Link the issue this PR addresses (if applicable). -->
+<!-- Link the issue this PR addresses. -->
 
 Fixes #
-
-Closes #
-
-Related #
 
 ---
 
 ## Type of Change
 
-Please check all that apply.
+<!-- Mark all that apply. -->
 
 - [ ] Bug fix
 - [ ] New feature
 - [ ] Performance improvement
 - [ ] Refactoring
 - [ ] Documentation update
-- [ ] UI/UX improvement
-- [ ] Test improvement
-- [ ] Build / CI change
-- [ ] Dependency update
-- [ ] Other (describe below)
+- [ ] Test improvements
+- [ ] CI/CD
+- [ ] Chore / Maintenance
+- [ ] Other
 
 ---
 
-## Description
+## Changes Made
 
-<!-- Explain what changed and why. -->
+<!-- Describe the important implementation details. -->
 
-### What was changed?
-
--
-
-### Why was it changed?
-
--
-
-### How was it implemented?
-
--
+- 
+- 
+- 
 
 ---
 
 ## Testing
 
-Describe how you tested your changes.
+<!-- Explain how this change was tested. -->
+
+### Tests Performed
 
 - [ ] Unit tests
 - [ ] Integration tests
 - [ ] Manual testing
 - [ ] Existing tests pass
 
-Testing Details:
+### Test Details
 
-```
-Describe the steps used to verify your changes.
-```
+<!-- Include commands, screenshots, or observations if applicable. -->
 
 ---
 
-## Screenshots (if applicable)
+## Documentation
 
-<!-- Include screenshots or GIFs for UI-related changes. -->
+Have you updated the documentation if required?
 
-Before:
-
-After:
+- [ ] README
+- [ ] API Documentation
+- [ ] Architecture Docs
+- [ ] Examples
+- [ ] No documentation changes required
 
 ---
 
-## Checklist
+## Screenshots (If Applicable)
 
-Before submitting this Pull Request, please verify the following.
-
-- [ ] I have read the CONTRIBUTING.md guidelines.
-- [ ] My code follows the project's coding standards.
-- [ ] I have tested my changes.
-- [ ] I have updated documentation where necessary.
-- [ ] I have added or updated tests where appropriate.
-- [ ] My branch is up to date with the target branch.
-- [ ] My commits are meaningful and organized.
-- [ ] This Pull Request focuses on a single logical change.
+<!-- Include before/after screenshots or recordings for UI changes. -->
 
 ---
 
 ## Breaking Changes
 
-Does this Pull Request introduce any breaking changes?
+<!-- Does this introduce any breaking changes? -->
 
-- [ ] Yes
-- [ ] No
+- [ ] No breaking changes
 
-If yes, describe them below.
+If yes, describe them:
 
 ---
 
-## Additional Notes
+## Deployment Impact
 
-Provide any additional information that reviewers should know.
+Does this change affect deployments?
 
--
+- [ ] No
+- [ ] Backend
+- [ ] Frontend
+- [ ] Database
+- [ ] CI/CD Pipeline
+- [ ] Infrastructure
+
+Additional deployment notes:
 
 ---
 
 ## Reviewer Notes
 
-<!-- Reserved for maintainers -->
+<!-- Mention anything reviewers should pay special attention to. -->
 
-Reviewer:
+Examples:
 
-Status:
+- Complex logic
+- Design decisions
+- Known limitations
+- Areas where feedback is requested
 
-Comments:
+---
+
+# Contributor Checklist
+
+Please confirm the following before requesting a review.
+
+- [ ] I have read the CONTRIBUTING.md guidelines.
+- [ ] My branch is up to date with the target branch.
+- [ ] My code follows the project's coding standards.
+- [ ] I have tested my changes.
+- [ ] Existing tests pass.
+- [ ] New tests have been added where appropriate.
+- [ ] Documentation has been updated where necessary.
+- [ ] No unnecessary files have been committed.
+- [ ] I have performed a self-review of my changes.
+- [ ] This Pull Request is ready for review.

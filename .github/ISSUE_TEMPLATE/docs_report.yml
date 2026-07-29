@@ -1,0 +1,53 @@
+name: Documentation Improvement
+description: Suggest improvements, fixes, or additions to the project documentation.
+title: "[Docs]: "
+labels:
+  - documentation
+
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thank you for helping improve the documentation!
+
+        Good documentation is just as valuable as good code.
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: What is wrong with the current documentation?
+      description: Describe the issue or missing information.
+      placeholder: The installation guide is missing backend setup instructions...
+    validations:
+      required: true
+
+  - type: textarea
+    id: suggestion
+    attributes:
+      label: Suggested Improvement
+      description: How should the documentation be improved?
+      placeholder: Add a section explaining...
+    validations:
+      required: true
+
+  - type: dropdown
+    id: area
+    attributes:
+      label: Documentation Area
+      options:
+        - README
+        - Installation Guide
+        - API Documentation
+        - Architecture Docs
+        - Contributing Guide
+        - Code Comments
+        - Tutorials
+        - Other
+    validations:
+      required: true
+
+  - type: textarea
+    id: additional
+    attributes:
+      label: Additional Context
+      description: Include screenshots, links, or references if applicable.

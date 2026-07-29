@@ -1,7 +1,5 @@
 # Contributing to NexusDeploy
 
-First of all, thank you for considering contributing to **NexusDeploy**.
-
 Whether you're fixing a typo, improving documentation, reporting a bug, or implementing a new feature, every contribution helps make the project better.
 
 We welcome contributors of all experience levels. If you're new to open source, don't hesitate to ask questions.
@@ -125,28 +123,29 @@ Never commit directly to the main branch.
 
 Create a feature branch.
 
+\[module_name\] = {frontend,backend,ai_services,...} 
 ```
-feature/add-user-authentication
+[module_name]/feature/add-user-authentication
 ```
 
 Bug fixes
 
 ```
-fix/login-validation
+[module_name]/fix/login-validation
 ```
 
 Documentation
 
 ```
-docs/update-api-reference
+[module_name]/docs/update-api-reference
 ```
 
 Refactoring
 
 ```
-refactor/database-layer
-```
+[module_name]/refactor/database-layer
 
+```
 ---
 
 # Coding Standards
