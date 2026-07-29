@@ -11,3 +11,13 @@ wheels/
 */node_modules
 *.env
 /Old
+
+
+node_modules/
+dist/
+coverage/
+.env
+.env.local
+.env.*.local
+!.env.example
+*.log
