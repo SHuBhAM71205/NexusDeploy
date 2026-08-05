@@ -21,3 +21,6 @@ coverage/
 .env.*.local
 !.env.example
 *.log
+
+
+.vscode
