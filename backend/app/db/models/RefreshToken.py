@@ -1,7 +1,7 @@
 from __future__ import annotations
 import uuid
 from datetime import datetime
-from typing import Optional
+from typing import TYPE_CHECKING, Optional
 
 from sqlalchemy import (
     ForeignKey,
@@ -14,8 +14,10 @@ from sqlalchemy import (
 )
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from app.db.models import User
 from app.db.models.Base import Base
+
+if TYPE_CHECKING:
+    from app.db.models.User import User
 
 
 class RefreshToken(Base):

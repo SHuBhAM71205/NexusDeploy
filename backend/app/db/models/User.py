@@ -1,7 +1,7 @@
 from __future__ import annotations
 import uuid
 from datetime import datetime
-from typing import List, Optional
+from typing import TYPE_CHECKING, List, Optional
 import enum
 
 from sqlalchemy import (
@@ -22,8 +22,10 @@ from sqlalchemy.orm import (
     relationship,
 )
 
-from app.db.models import RefreshToken
 from app.db.models.Base import Base
+
+if TYPE_CHECKING:
+    from app.db.models.RefreshToken import RefreshToken
 
 class UserStatus(enum.Enum):
     PENDING = "pending"

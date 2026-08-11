@@ -1,3 +1,4 @@
+from datetime import datetime, timezone
 from typing import Tuple
 
 from sqlalchemy import select
@@ -48,6 +49,24 @@ class AuthServices:
         db_tokens = result.scalars().all()
 
         return db_tokens
+
+    async def get_user_tokens(self, user_id, db: AsyncSession):
+        stmt = select(RefreshToken).where(
+            RefreshToken.user_id == user_id
+        )
+        result = await db.execute(stmt)
+        return result.scalars().all()
+
+    async def revoke_all_user_tokens(self, user_id, db: AsyncSession):
+        tokens = await self.get_user_tokens(user_id=user_id, db=db)
+        if not tokens:
+            return
+
+        for token in tokens:
+            token.is_revoked = True
+            token.revoked_at = datetime.now(timezone.utc)
+
+        await db.commit()
 
     def refresh_access_token(self, user_id):
         return self.__token.refresh_access_token(user_id)

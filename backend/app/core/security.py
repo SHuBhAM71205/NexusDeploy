@@ -59,7 +59,9 @@ class AccessToken:
         db_refresh_token = RefreshToken(
             user_id=user_id,
             token_hash=refresh_token_hash,
-            expires_at=refresh_expire
+            expires_at=refresh_expire,
+            is_revoked=False,
+            revoked_at=None,
         )
 
         db.add(db_refresh_token)

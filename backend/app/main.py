@@ -1,11 +1,6 @@
-import os
-
-from dotenv import load_dotenv;
-
-load_dotenv()
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from authlib.integrations.starlette_client import OAuth
+
 from starlette.middleware.sessions import SessionMiddleware
 
 from app.core.config import settings
@@ -20,7 +15,6 @@ origin = [
 ]
 
 
-
 #fastapi app
 app = FastAPI()
 
@@ -32,20 +26,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-app.add_middleware(SessionMiddleware, secret_key=os.getenv("SECRET_KEY")) #type: ignore
-
-oauth = OAuth()
-oauth.register(
-    name='google',
-    client_id=os.getenv("GOOGLE_CLIENT_ID"),
-    client_secret=os.getenv("GOOGLE_CLIENT_SECRET"),
-    authorize_url=os.getenv("GC_AUTH_URI"),
-    access_token_url=os.getenv("GC_TOKEN_URI"),
-    jwks_uri=os.getenv("GC_AUTH_PROVIDER"),
-    client_kwargs={
-        'scope': 'openid email profile'
-    }
-)
+app.add_middleware(SessionMiddleware, secret_key=settings.SECRET_KEY,session_cookie="fastapi_session",same_site="lax",https_only=False)
 
 @app.get("/")
 def root():
