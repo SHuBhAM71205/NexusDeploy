@@ -14,10 +14,13 @@ wheels/
 
 
 node_modules/
-dist/
 coverage/
 .env
 .env.local
 .env.*.local
 !.env.example
 *.log
+
+
+.vscode
+.idea

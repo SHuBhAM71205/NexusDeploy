@@ -1,6 +1,14 @@
 # NexusDeploy
 
-> Modern, scalable deployment platform for building, managing, and deploying applications with a focus on automation, reliability, and developer experience.
+> NexusDeploy is an open-source application deployment platform.
+
+> It is designed to automate the process of building, deploying, and
+managing applications across different infrastructure providers.
+
+> The goal is to provide developers with a simple deployment workflow.
+
+> while keeping the underlying infrastructure reliable, extensible,
+and provider-independent.
 
 ![License](https://img.shields.io/github/license/SHuBhAM71205/NexusDeploy)
 ![Contributors](https://img.shields.io/github/contributors/SHuBhAM71205/NexusDeploy)
@@ -12,22 +20,22 @@
 
 ## Table of Contents
 
-- Overview
-- Features
-- Architecture
-- Project Structure
-- Tech Stack
-- Getting Started
-- Installation
-- Configuration
-- Running the Project
-- Development Workflow
-- Documentation
-- Roadmap
-- Contributing
-- Code of Conduct
-- License
-- Acknowledgements
+- [Overview](#Overview)
+- [Features](#features)
+- [Architecture](#architecture)
+- [Project Structure](#project-structure)
+- [Tech Stack](#tech-stack)
+- [Getting Started](#getting-started)
+- [Installation](#installation)
+- [Configuration](#configuration)
+- [Running the Project](#running-the-project)
+- [Development Workflow](#development-workflow)
+- [Documentation](#documentation)
+- [Roadmap](#roadmap)
+- [Contributing](#contributing)
+- [Code of Conduct](#code-of-conduct)
+- [License](#license)
+- [Acknowledgements](#acknowledgements)
 
 ---
 
@@ -68,27 +76,9 @@ Current and planned features include:
 
 # Architecture
 
-The project follows a modular architecture.
-
-```
-                Client
-                   │
-             Frontend (React)
-                   │
-              REST / API
-                   │
-            Backend Services
-                   │
-      Deployment Engine & Workers
-                   │
-        Infrastructure Providers
-```
-
-Detailed architecture documentation is available inside:
-
-```
-docs/architecture/
-```
+- The project follows a modular architecture.
+- Detailed architecture documentation is available inside:
+[docs/architecture/](./docs/architecture)
 
 ---
 
@@ -161,6 +151,10 @@ Backend
 cd backend
 
 # install dependencies
+uv venv .venv
+
+uv sync
+
 ```
 
 Frontend
@@ -180,6 +174,8 @@ Create environment files.
 Backend
 
 ```
+# edit this .env with backend/.env.example and add you api keys and secretes and pwd
+
 backend/.env
 ```
 
@@ -196,11 +192,34 @@ Configuration examples will be provided in future releases.
 # Running the Project
 
 Backend
+### to start the backend locally
+- start the docker Desktop or docker services
+```bash
+# build docker container
+docker compose build
+
+# run all docker containers
+docker compose up
+
+# backend container is running you can access it through local host 
+```
+- to run code of backend locally without docker 
+  - as there are many services like redis and postgres run on docker so start all acontainers
 
 ```bash
-# start backend
-```
+# you can use uv or pip to start the backend
 
+## to start the venv 
+
+./.venv/Scripts/activate
+
+## to start backend
+
+### using the uv
+
+uv run uvicorn backend.app.main:app -host <host> -port <port_num>
+
+```
 Frontend
 
 ```bash
@@ -212,7 +231,7 @@ Development server URLs
 ```
 Frontend: http://localhost:3000
 
-Backend: http://localhost:5000
+Backend: http://<host>:<port>
 ```
 
 ---
@@ -227,10 +246,8 @@ Backend: http://localhost:5000
 6. Submit a Pull Request.
 
 For detailed contribution guidelines, see:
+[CONTRIBUTING.md](./CONTRIUTING.md)
 
-```
-CONTRIBUTING.md
-```
 
 ---
 
@@ -267,10 +284,10 @@ Planned milestones include:
 
 We welcome contributions from developers of all experience levels.
 
-Please read:
+ - To get started with contributing to project 
 
-- CONTRIBUTING.md
-- CODE_OF_CONDUCT.md
+- Please read: [CONTRIBUTING.md](./CONTRIUTING.md)
+  
 
 before opening issues or pull requests.
 
@@ -278,7 +295,7 @@ before opening issues or pull requests.
 
 # Code of Conduct
 
-This project follows our Code of Conduct.
+This project follows our [CODE_OF_CONDUCT](./CODE_OF_CONDUCT.md).
 
 Please help us build a welcoming and respectful community.
 
@@ -288,7 +305,7 @@ Please help us build a welcoming and respectful community.
 
 This project is licensed under the MIT License.
 
-See the LICENSE file for details.
+See the [LICENCE](./LICENCE.md) file for details.
 
 ---
 
@@ -296,4 +313,4 @@ See the LICENSE file for details.
 
 Thanks to everyone who contributes to NexusDeploy.
 
-Every issue, pull request, suggestion, and discussion helps improve the project.
+Every **_issue, pull request, suggestion, and discussion_** helps improve the project.
