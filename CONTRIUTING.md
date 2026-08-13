@@ -1,7 +1,5 @@
 # Contributing to NexusDeploy
 
-Whether you're fixing a typo, improving documentation, reporting a bug, or implementing a new feature, every contribution helps make the project better.
-
 We welcome contributors of all experience levels. If you're new to open source, don't hesitate to ask questions.
 
 ---
@@ -47,7 +45,6 @@ There are many ways to contribute:
 - Improve UI/UX
 - Improve accessibility
 - Improve testing
-- Review Pull Requests
 - Suggest ideas
 
 Every contribution is valuable.
@@ -83,10 +80,11 @@ cd NexusDeploy
 
 Install dependencies
 
+Here for dependency management we are using uv so install uv
 Backend
 
 ```bash
-# instructions coming soon
+uv sync
 ```
 
 Frontend
@@ -119,28 +117,35 @@ Documentation for the architecture can be found in the `docs/` directory.
 
 # Branching Strategy
 
-Never commit directly to the main branch.
+Never commit <u>directly to the main branch.</u>
 
-Create a feature branch.
+Create a feature branch which is local to your device.
 
-\[module_name\] = {frontend,backend,ai_services,...} 
+```
+git checkout -b <branch_name>
+git switch -c <branch_name>
+
+```
+# Branch name Convention
+
+##### \[module_name\] = {frontend,backend,ai_services,...} 
+
+###### to add the new feature use this name patter
 ```
 [module_name]/feature/add-user-authentication
 ```
-
-Bug fixes
+###### to fix bug use this name pattern
 
 ```
 [module_name]/fix/login-validation
 ```
 
-Documentation
-
+###### to update docs use this name pattern
 ```
 [module_name]/docs/update-api-reference
 ```
 
-Refactoring
+###### to refactoruse this name pattern
 
 ```
 [module_name]/refactor/database-layer
@@ -200,7 +205,20 @@ asdf
 ```
 
 ---
+# Publish Branch
 
+Once you have updated and modify the code you need to publish branch.
+by publishing branch you have added the branch to remote server of github. 
+
+- Before publishing branch first make sure you are in sync with main branch
+```
+git pull origin <main/master>
+```
+```
+git push -u origin <branch-name>
+```
+
+---
 # Pull Request Process
 
 Before opening a Pull Request, ensure that:
@@ -284,7 +302,7 @@ Examples include:
 
 Every Pull Request will be reviewed by one or more maintainers.
 
-During review you may be asked to:
+During review, you may be asked to:
 
 - Make code changes
 - Improve documentation
