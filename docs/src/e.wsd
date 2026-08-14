@@ -1,0 +1,147 @@
+@startuml
+title Nexus Deploy - Use Case Diagram
+
+left to right direction
+
+skinparam packageStyle rectangle
+skinparam shadowing false
+skinparam actorStyle awesome
+
+actor Developer
+actor "Git Provider" as Git
+actor "Deployment Platform" as Platform
+actor "Container Registry" as Registry
+actor "Monitoring System" as Monitoring
+
+rectangle "Nexus Deploy" {
+
+    package "Project Management" {
+
+        usecase "Register / Login" as UC_Login
+        usecase "Manage Profile" as UC_Profile
+        usecase "Create Project" as UC_CreateProject
+        usecase "Configure Repository" as UC_Repository
+        usecase "Configure Environment" as UC_Environment
+
+    }
+
+    package "Pipeline Management" {
+
+        usecase "Create Pipeline" as UC_CreatePipeline
+        usecase "Configure Build Steps" as UC_Build
+        usecase "Configure Test / Lint" as UC_Test
+        usecase "View Pipeline Runs" as UC_ViewRuns
+        usecase "Retry Failed Pipeline" as UC_Retry
+
+    }
+
+    package "Deployment Management" {
+
+        usecase "Trigger Deployment" as UC_Deploy
+        usecase "Select Deployment Strategy" as UC_Strategy
+        usecase "Rolling Deployment" as UC_Rolling
+        usecase "Blue-Green Deployment" as UC_BlueGreen
+        usecase "Canary Deployment" as UC_Canary
+        usecase "View Deployment Status" as UC_Status
+        usecase "Rollback Deployment" as UC_Rollback
+
+    }
+
+    package "Source Integration" {
+
+        usecase "Receive Webhook" as UC_Webhook
+        usecase "Fetch Source Code" as UC_Fetch
+        usecase "Authenticate Repository" as UC_RepoAuth
+
+    }
+
+    package "Build & Artifact Management" {
+
+        usecase "Execute Build" as UC_BuildExecute
+        usecase "Run Tests" as UC_RunTests
+        usecase "Build Container Image" as UC_Image
+        usecase "Store Build Artifact" as UC_Artifact
+        usecase "Push Container Image" as UC_PushImage
+
+    }
+
+    package "Monitoring & Operations" {
+
+        usecase "View Logs" as UC_Logs
+        usecase "View Metrics" as UC_Metrics
+        usecase "View Health Status" as UC_Health
+        usecase "Receive Deployment Alerts" as UC_Alerts
+
+    }
+
+    package "Security" {
+
+        usecase "Manage Access / RBAC" as UC_RBAC
+        usecase "Manage Secrets" as UC_Secrets
+
+    }
+}
+
+
+Developer --> UC_Login
+Developer --> UC_Profile
+
+Developer --> UC_CreateProject
+Developer --> UC_Repository
+Developer --> UC_Environment
+
+Developer --> UC_CreatePipeline
+Developer --> UC_ViewRuns
+Developer --> UC_Retry
+
+Developer --> UC_Deploy
+Developer --> UC_Strategy
+Developer --> UC_Status
+Developer --> UC_Rollback
+
+Developer --> UC_Logs
+Developer --> UC_Metrics
+Developer --> UC_Health
+
+Developer --> UC_RBAC
+Developer --> UC_Secrets
+
+
+UC_CreatePipeline ..> UC_Build : <<include>>
+UC_CreatePipeline ..> UC_Test : <<include>>
+
+UC_Deploy ..> UC_Strategy : <<include>>
+
+UC_Strategy ..> UC_Rolling : <<extend>>
+UC_Strategy ..> UC_BlueGreen : <<extend>>
+UC_Strategy ..> UC_Canary : <<extend>>
+
+UC_Deploy ..> UC_BuildExecute : <<include>>
+UC_BuildExecute ..> UC_Fetch : <<include>>
+UC_BuildExecute ..> UC_RunTests : <<include>>
+UC_BuildExecute ..> UC_Image : <<include>>
+
+UC_Image ..> UC_PushImage : <<include>>
+UC_BuildExecute ..> UC_Artifact : <<include>>
+
+Git --> UC_Webhook
+Git --> UC_Fetch
+Git --> UC_RepoAuth
+
+UC_Webhook ..> UC_Deploy : <<trigger>>
+
+Platform --> UC_Deploy
+Platform --> UC_Health
+Platform --> UC_Status
+
+Registry --> UC_PushImage
+
+Monitoring --> UC_Metrics
+Monitoring --> UC_Logs
+Monitoring --> UC_Alerts
+
+UC_Health ..> UC_Rollback : <<trigger>>
+UC_Alerts ..> UC_Health : <<include>>
+
+UC_Repository ..> UC_RepoAuth : <<include>>
+@enduml
