@@ -24,3 +24,7 @@ coverage/
 
 .vscode
 .idea
+
+
+docs/src
+docs/out/*
