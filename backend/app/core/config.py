@@ -72,6 +72,6 @@ class Settings(BaseSettings):
     REACT_APP_FRONTEND_PORT: int
     @computed_field
     def REACT_APP_FRONTEND_URL(self) -> str:
-        return f"{self.REACT_APP_FRONTEND_HOST}"
+        return f"{self.REACT_APP_FRONTEND_HOST}:{self.REACT_APP_FRONTEND_PORT}"
 
 settings = Settings()  # type:ignore
