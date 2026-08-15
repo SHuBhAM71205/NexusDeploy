@@ -1,0 +1,125 @@
+@startuml
+title Nexus Deploy - Application Deployment Sequence
+
+actor Developer
+
+participant "Git Provider" as Git
+participant "Nginx" as Nginx
+participant "API / Webhook Service" as API
+participant "Pipeline Service" as Pipeline
+participant "PostgreSQL" as DB
+participant "Redis" as Redis
+participant "Pipeline Orchestrator" as Orchestrator
+participant "RabbitMQ" as Queue
+participant "Worker" as Worker
+participant "Docker Sandbox" as Docker
+participant "Artifact Manager" as Artifact
+participant "Container Registry" as Registry
+participant "Deployment Manager" as Deployment
+participant "Deployment Platform" as Platform
+participant "Health Checker" as Health
+participant "Prometheus" as Prometheus
+participant "Notification Service" as Notify
+
+Developer -> Git : Push code
+
+Git -> Nginx : Webhook event
+
+Nginx -> API : Forward webhook
+
+API -> API : Validate signature
+
+API -> Redis : Check idempotency
+
+Redis --> API : Event not processed
+
+API -> Pipeline : Identify pipeline
+
+Pipeline -> DB : Load pipeline configuration
+
+DB --> Pipeline : Pipeline definition
+
+Pipeline -> Orchestrator : Trigger pipeline
+
+Orchestrator -> DB : Create pipeline run
+
+Orchestrator -> Queue : Enqueue job
+
+Queue -> Worker : Deliver job
+
+Worker -> Docker : Create isolated sandbox
+
+Worker -> Git : Fetch source
+
+Git --> Worker : Source code
+
+Worker -> Docker : Execute build
+
+Docker --> Worker : Build result
+
+alt Build failed
+
+    Worker -> DB : Store failed run
+    Worker -> Notify : Send failure notification
+    Notify --> Developer : Build failed
+
+else Build successful
+
+    Worker -> Docker : Run tests
+
+    alt Tests failed
+
+        Worker -> DB : Store test failure
+        Worker -> Notify : Send failure notification
+        Notify --> Developer : Tests failed
+
+    else Tests passed
+
+        Worker -> Docker : Build container image
+
+        Docker -> Registry : Push image
+
+        Registry --> Docker : Image stored
+
+        Worker -> Artifact : Store artifacts
+
+        Artifact -> DB : Store artifact metadata
+
+        Worker -> Deployment : Request deployment
+
+        Deployment -> Platform : Deploy image
+
+        Platform --> Deployment : Deployment result
+
+        Deployment -> Health : Run health checks
+
+        Health -> Platform : Check application
+
+        Platform --> Health : Health status
+
+        alt Healthy
+
+            Health -> DB : Mark deployment successful
+            Health -> Prometheus : Publish metrics
+            Notify -> Developer : Deployment successful
+
+        else Unhealthy
+
+            Health -> Deployment : Trigger rollback
+
+            Deployment -> Platform : Restore previous release
+
+            Platform --> Deployment : Rollback complete
+
+            Deployment -> DB : Mark rolled back
+
+            Deployment -> Notify : Send rollback notification
+
+            Notify --> Developer : Deployment rolled back
+
+        end
+
+    end
+
+end
+@enduml

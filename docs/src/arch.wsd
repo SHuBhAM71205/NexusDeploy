@@ -1,0 +1,193 @@
+@startuml NexusDeploy
+title Nexus Deploy - System Architecture
+
+skinparam componentStyle rectangle
+skinparam shadowing false
+skinparam packageStyle rectangle
+skinparam defaultFontName Arial
+skinparam linetype ortho
+
+actor Developer
+
+cloud "Git Provider" as Git
+cloud "Deployment Platforms" as DeployTargets
+cloud "Container Registry" as Registry
+
+package "Client & Edge" {
+
+    component "React Dashboard" as Frontend
+    component "Nginx\nLoad Balancer" as Nginx
+}
+
+Developer --> Frontend
+Frontend --> Nginx : HTTPS
+Git --> Nginx : Webhooks
+
+package "Nexus Deploy Control Plane" {
+
+    component "FastAPI API Cluster" as API
+    component "Authentication\n+ RBAC" as Auth
+    component "Project / Repository\nManagement" as Projects
+    component "Pipeline Service" as Pipeline
+    component "Webhook Service" as Webhook
+    component "Deployment Service" as Deployment
+    component "Notification Service" as Notify
+
+}
+
+Nginx --> API
+Nginx --> Webhook
+
+API --> Auth
+API --> Projects
+API --> Pipeline
+API --> Deployment
+
+Webhook --> Pipeline
+
+package "Data Layer" {
+
+    database "PostgreSQL\nPrimary Data" as PostgreSQL
+    database "Redis\nCache / Distributed State" as Redis
+    database "MongoDB\nErrors / Events / Logs" as MongoDB
+
+}
+
+Auth --> PostgreSQL
+Projects --> PostgreSQL
+Pipeline --> PostgreSQL
+Deployment --> PostgreSQL
+
+API --> Redis
+Pipeline --> Redis
+
+Webhook --> MongoDB
+
+package "Orchestration" {
+
+    queue "RabbitMQ\nJob Queue" as Queue
+    component "Scheduler" as Scheduler
+    component "Pipeline Orchestrator" as Orchestrator
+
+}
+
+Pipeline --> Orchestrator
+Webhook --> Orchestrator
+
+Orchestrator --> Scheduler
+Scheduler --> Queue
+
+package "Worker Execution Plane" {
+
+    component "Worker Manager" as WorkerManager
+    component "Worker Pool\nScalable Workers" as Workers
+    component "Docker Sandbox\nBuild / Test / Lint" as DockerSandbox
+
+}
+
+Queue --> WorkerManager
+WorkerManager --> Workers
+Workers --> DockerSandbox
+
+Workers --> MongoDB : execution errors
+Workers --> PostgreSQL : job status
+
+package "Artifact Management" {
+
+    component "Artifact Manager" as ArtifactManager
+    database "Object Storage\nBuild Artifacts" as ObjectStorage
+
+}
+
+DockerSandbox --> ArtifactManager
+ArtifactManager --> ObjectStorage
+ArtifactManager --> Registry : container images
+
+package "Deployment Plane" {
+
+    component "Deployment Manager" as DeploymentManager
+    component "Release Manager" as ReleaseManager
+    component "Health Checks" as HealthChecks
+    component "Rollback Controller" as Rollback
+    component "Rolling / Blue-Green /\nCanary Strategies" as Strategies
+
+}
+
+Deployment --> DeploymentManager
+
+DeploymentManager --> ReleaseManager
+DeploymentManager --> Strategies
+DeploymentManager --> HealthChecks
+
+HealthChecks --> Rollback
+Rollback --> ReleaseManager
+Rollback --> DeploymentManager
+
+DeploymentManager --> DeployTargets : deploy
+DeployTargets --> Registry : pull image
+
+package "Monitoring & Observability" {
+
+    component "Prometheus" as Prometheus
+    component "Grafana" as Grafana
+    component "Alert Manager" as Alerts
+    component "Log Collector" as LogCollector
+
+}
+
+API --> Prometheus : metrics
+Workers --> Prometheus : metrics
+DeployTargets --> Prometheus : runtime metrics
+
+API --> LogCollector
+Workers --> LogCollector
+DeploymentManager --> LogCollector
+
+LogCollector --> MongoDB
+
+Prometheus --> Grafana
+Prometheus --> Alerts
+
+Alerts --> Notify
+Notify --> Developer
+
+package "Security & Reliability" {
+
+    component "Secrets Manager" as Secrets
+    component "Rate Limiting\n+ Idempotency" as Protection
+    component "Retry / Failure Handling" as Retry
+
+}
+
+API --> Protection
+DeploymentManager --> Secrets
+Workers --> Secrets
+
+Retry --> Queue
+Orchestrator --> Retry
+
+package "Scalability" {
+
+    component "API Autoscaling" as APIScale
+    component "Worker Autoscaling" as WorkerScale
+
+}
+
+Prometheus --> APIScale
+Prometheus --> WorkerScale
+
+APIScale --> API
+WorkerScale --> Workers
+
+Developer --> Git : Push code
+Git --> Webhook : event
+Webhook --> Orchestrator : trigger
+Orchestrator --> Queue : enqueue
+Queue --> Workers : execute
+Workers --> DockerSandbox : build
+DockerSandbox --> Registry : image
+DeploymentManager --> DeployTargets : release
+HealthChecks --> Prometheus : health
+Grafana --> Frontend : live status
+
+@enduml

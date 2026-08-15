@@ -1,0 +1,50 @@
+@startuml
+title Nexus Deploy - Pipeline and Deployment State Diagram
+
+[*] --> Idle
+
+Idle --> Triggered : Manual trigger
+Idle --> Triggered : Git webhook
+
+Triggered --> Queued : Create pipeline run
+
+Queued --> Preparing : Worker assigned
+
+Preparing --> Building : Source fetched
+
+Building --> Testing : Build successful
+Building --> Failed : Build failed
+
+Testing --> Linting : Tests passed
+Testing --> Failed : Tests failed
+
+Linting --> Packaging : Lint successful
+Linting --> Failed : Lint failed
+
+Packaging --> Deploying : Artifact/image ready
+
+Deploying --> HealthChecking : Deployment completed
+
+HealthChecking --> Successful : Health checks passed
+HealthChecking --> Rollback : Health checks failed
+
+Rollback --> RollingBack : Restore previous release
+
+RollingBack --> RolledBack : Previous release restored
+
+Deploying --> Failed : Deployment error
+
+Failed --> Retrying : Retry requested
+Retrying --> Queued
+
+Queued --> Cancelled : User cancels
+Preparing --> Cancelled : User cancels
+Building --> Cancelled : User cancels
+Testing --> Cancelled : User cancels
+Deploying --> Cancelled : User cancels
+
+Successful --> [*]
+RolledBack --> [*]
+Failed --> [*]
+Cancelled --> [*]
+@enduml

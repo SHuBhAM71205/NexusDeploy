@@ -1,0 +1,288 @@
+@startuml
+title Nexus Deploy - Data Flow Diagrams
+
+skinparam shadowing false
+skinparam linetype ortho
+skinparam defaultFontName Arial
+skinparam nodesep 40
+skinparam ranksep 50
+
+
+' =========================================================
+' LEVEL 0 - CONTEXT DIAGRAM
+' =========================================================
+
+title Level 0 DFD - Nexus Deploy Context Diagram
+
+left to right direction
+
+actor Developer
+
+cloud "GitHub / GitLab" as Git0
+cloud "Deployment Platform" as Platform0
+cloud "Container Registry" as Registry0
+
+rectangle "Nexus Deploy" as System0
+
+Developer --> System0 : Projects / Pipelines /\nDeployment requests
+System0 --> Developer : Status / Logs /\nNotifications
+
+Git0 --> System0 : Webhooks / Source code
+System0 --> Git0 : Repository requests
+
+System0 --> Platform0 : Deployment requests
+Platform0 --> System0 : Deployment / Health status
+
+System0 --> Registry0 : Push / Manage images
+Registry0 --> System0 : Container images
+
+
+newpage
+
+' =========================================================
+' LEVEL 1 - SYSTEM DECOMPOSITION
+' =========================================================
+
+title Level 1 DFD - Nexus Deploy
+
+left to right direction
+
+actor Developer
+cloud "GitHub / GitLab" as Git1
+cloud "Deployment Platform" as Platform1
+cloud "Container Registry" as Registry1
+
+rectangle "1.0\nAuthentication &\nProject Management" as P1
+rectangle "2.0\nPipeline Management" as P2
+rectangle "3.0\nPipeline Execution" as P3
+rectangle "4.0\nArtifact Management" as P4
+rectangle "5.0\nDeployment Management" as P5
+rectangle "6.0\nMonitoring &\nNotification" as P6
+
+database "D1\nPostgreSQL" as DB1
+database "D2\nRedis" as Redis1
+database "D3\nObject Storage" as Storage1
+database "D4\nMongoDB\nLogs & Events" as Mongo1
+queue "D5\nRabbitMQ" as Queue1
+
+Developer --> P1 : Login / Project data
+P1 --> Developer : Authentication /\nProject information
+
+Developer --> P2 : Pipeline configuration
+Git1 --> P2 : Webhook / Repository data
+
+P1 --> DB1 : User / Project data
+P1 --> Redis1 : Session / Cache
+
+P2 --> DB1 : Pipeline configuration
+P2 --> P3 : Pipeline trigger
+
+P3 --> Queue1 : Jobs
+Queue1 --> P3 : Execution jobs
+
+P3 --> Git1 : Source request
+Git1 --> P3 : Source code
+
+P3 --> P4 : Build artifacts /\nContainer image
+P3 --> DB1 : Pipeline run status
+P3 --> Mongo1 : Execution logs
+
+P4 --> Storage1 : Build artifacts
+P4 --> Registry1 : Container images
+
+P4 --> P5 : Deployable image
+
+P5 --> Platform1 : Deployment request
+Platform1 --> P5 : Deployment /\nHealth status
+
+P5 --> DB1 : Deployment / Release data
+
+Platform1 --> P6 : Runtime metrics /\nHealth information
+P6 --> Mongo1 : Logs / Events
+P6 --> DB1 : Audit records
+
+P6 --> Developer : Metrics / Logs /\nAlerts
+
+
+newpage
+
+' =========================================================
+' LEVEL 2 - PIPELINE EXECUTION
+' =========================================================
+
+title Level 2 DFD - Pipeline Execution
+
+left to right direction
+
+actor Developer
+cloud "GitHub / GitLab" as Git2
+
+rectangle "3.1\nReceive Pipeline\nTrigger" as P31
+rectangle "3.2\nLoad Pipeline\nConfiguration" as P32
+rectangle "3.3\nCreate Pipeline\nRun" as P33
+rectangle "3.4\nQueue\nExecution Job" as P34
+rectangle "3.5\nExecute Build /\nTest / Lint" as P35
+rectangle "3.6\nStore Run\nResult" as P36
+
+database "D1\nPostgreSQL" as DB2
+database "D2\nRedis" as Redis2
+database "D4\nMongoDB Logs" as Mongo2
+queue "D5\nRabbitMQ" as Queue2
+
+Developer --> P31 : Manual trigger
+Git2 --> P31 : Webhook
+
+P31 --> P32 : Valid trigger
+
+P32 --> DB2 : Read pipeline config
+DB2 --> P32 : Pipeline definition
+
+P32 --> P33 : Configuration
+
+P33 --> DB2 : Create run
+P33 --> Redis2 : Idempotency check
+
+P33 --> P34 : Execution job
+
+P34 --> Queue2 : Enqueue job
+
+Queue2 --> P35 : Worker job
+
+P35 --> Git2 : Fetch source
+Git2 --> P35 : Source code
+
+P35 --> Mongo2 : Build / Test logs
+
+P35 --> P36 : Execution result
+
+P36 --> DB2 : Run status
+
+P36 --> Developer : Pipeline result
+
+
+newpage
+
+' =========================================================
+' LEVEL 2 - ARTIFACT MANAGEMENT
+' =========================================================
+
+title Level 2 DFD - Artifact Management
+
+left to right direction
+
+rectangle "4.1\nReceive Build\nOutput" as P41
+rectangle "4.2\nStore Build\nArtifact" as P42
+rectangle "4.3\nBuild Container\nImage" as P43
+rectangle "4.4\nPush Image to\nRegistry" as P44
+rectangle "4.5\nStore Artifact\nMetadata" as P45
+
+database "D3\nObject Storage" as Storage2
+database "D1\nPostgreSQL" as DB3
+cloud "Container Registry" as Registry2
+
+P41 --> P42 : Build artifacts
+P41 --> P43 : Build output
+
+P42 --> Storage2 : Artifact files
+Storage2 --> P42 : Artifact retrieval
+
+P43 --> P44 : Container image
+P44 --> Registry2 : Push image
+Registry2 --> P44 : Image reference
+
+P42 --> P45 : Artifact metadata
+P44 --> P45 : Image metadata
+
+P45 --> DB3 : Artifact / Image metadata
+
+
+newpage
+
+' =========================================================
+' LEVEL 2 - DEPLOYMENT MANAGEMENT
+' =========================================================
+
+title Level 2 DFD - Deployment Management
+
+left to right direction
+
+actor Developer
+
+cloud "Container Registry" as Registry3
+cloud "Deployment Platform" as Platform2
+
+rectangle "5.1\nValidate Deployment\nRequest" as P51
+rectangle "5.2\nSelect Deployment\nStrategy" as P52
+rectangle "5.3\nDeploy Release" as P53
+rectangle "5.4\nPerform Health\nCheck" as P54
+rectangle "5.5\nRollback Failed\nRelease" as P55
+rectangle "5.6\nRecord Deployment\nResult" as P56
+
+database "D1\nPostgreSQL" as DB4
+
+Developer --> P51 : Deployment request
+
+P51 --> P52 : Valid request
+
+P52 --> P53 : Rolling /\nBlue-Green / Canary
+
+Registry3 --> P53 : Container image
+
+P53 --> Platform2 : Deploy release
+
+Platform2 --> P54 : Runtime status
+
+P54 --> P56 : Healthy
+
+P54 --> P55 : Failure
+
+P55 --> Platform2 : Restore previous release
+
+P55 --> P56 : Rollback result
+
+P53 --> P56 : Deployment result
+
+P56 --> DB4 : Deployment / Release data
+
+P56 --> Developer : Deployment status
+
+
+newpage
+
+' =========================================================
+' LEVEL 2 - MONITORING & NOTIFICATION
+' =========================================================
+
+title Level 2 DFD - Monitoring & Notification
+
+left to right direction
+
+actor Developer
+
+rectangle "6.1\nCollect Metrics &\nLogs" as P61
+rectangle "6.2\nProcess Monitoring\nData" as P62
+rectangle "6.3\nDetect Failure /\nAlert Condition" as P63
+rectangle "6.4\nGenerate\nNotification" as P64
+
+component "Prometheus" as Prometheus2
+component "Grafana" as Grafana2
+component "Alert Manager" as Alert2
+
+database "D4\nMongoDB" as Mongo4
+
+P61 --> Prometheus2 : Metrics
+P61 --> Mongo4 : Logs / Events
+
+Prometheus2 --> P62 : Metrics
+Mongo4 --> P62 : Logs / Events
+
+P62 --> Grafana2 : Dashboard data
+P62 --> P63 : Monitoring data
+
+P63 --> Alert2 : Alert condition
+
+Alert2 --> P64 : Alert
+
+P64 --> Developer : Notification
+
+@enduml

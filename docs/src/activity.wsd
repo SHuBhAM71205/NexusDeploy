@@ -1,0 +1,129 @@
+@startuml
+title Nexus Deploy - Deployment Activity Diagram
+
+start
+
+:Developer pushes code;
+
+:Git Provider sends webhook;
+
+:Validate webhook;
+
+if (Webhook valid?) then (Yes)
+
+    :Identify project and pipeline;
+
+    :Load pipeline configuration;
+
+    :Create pipeline run;
+
+    :Place job in message queue;
+
+    :Assign worker;
+
+    :Create isolated execution environment;
+
+    :Fetch source code;
+
+    :Install dependencies;
+
+    :Run build;
+
+    if (Build successful?) then (Yes)
+
+        :Run tests;
+
+        if (Tests passed?) then (Yes)
+
+            :Run lint / static checks;
+
+            if (Checks passed?) then (Yes)
+
+                :Build container image;
+
+                :Store build artifacts;
+
+                :Push image to registry;
+
+                :Select deployment strategy;
+
+                if (Deployment strategy) then (Rolling)
+
+                    :Perform rolling deployment;
+
+                elseif (Blue-Green)
+
+                    :Deploy new environment;
+
+                    :Switch traffic;
+
+                else (Canary)
+
+                    :Deploy canary instances;
+
+                    :Route limited traffic;
+
+                    :Validate canary;
+
+                endif
+
+                :Run health checks;
+
+                if (Healthy?) then (Yes)
+
+                    :Mark deployment successful;
+
+                    :Create release record;
+
+                    :Send success notification;
+
+                else (No)
+
+                    :Start rollback;
+
+                    :Restore previous release;
+
+                    :Send rollback notification;
+
+                endif
+
+            else (No)
+
+                :Mark pipeline failed;
+
+                :Store error logs;
+
+                :Send failure notification;
+
+            endif
+
+        else (No)
+
+            :Mark pipeline failed;
+
+            :Store test results;
+
+            :Send failure notification;
+
+        endif
+
+    else (No)
+
+        :Mark pipeline failed;
+
+        :Store build logs;
+
+        :Send failure notification;
+
+    endif
+
+else (No)
+
+    :Reject webhook;
+
+    :Record security event;
+
+endif
+
+stop
+@enduml
