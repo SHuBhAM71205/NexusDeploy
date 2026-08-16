@@ -34,6 +34,29 @@ class Settings(BaseSettings):
     PG_DB_HOST: str
     PG_DB_PORT: int
     
+    # Project Settings
+    PROJECT_NAME: str = "NexusDeploy API"
+    VERSION: str = "0.1.0"
+    API_V1_STR: str = "/api/v1"
+    HOST: str = "0.0.0.0"
+    PORT: int = 5000
+    DEBUG: bool = True
+    CORS_ORIGINS: List[str] = [
+        "http://localhost:3000",
+        "http://127.0.0.1:3000",
+        "http://localhost:5173",
+        "http://127.0.0.1:5173",
+        "http://localhost:4173",
+        "*",
+    ]
+
+    # POSTGRES
+    PG_DB_NAME: str
+    PG_DB_USER: str
+    PG_DB_PASSWORD: str
+    PG_DB_HOST: str
+    PG_DB_PORT: int
+    
     @computed_field
     def POSTGRES_URL(self) -> str:
         return f"postgresql+asyncpg://{self.PG_DB_USER}:{self.PG_DB_PASSWORD}@{self.PG_DB_HOST}:{self.PG_DB_PORT}/{self.PG_DB_NAME}"
