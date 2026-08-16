@@ -164,8 +164,12 @@ async def google_oauth_callback(request: Request, response: Response, db: AsyncD
         "provider": "google",
     })
     
+    '''
+        TODO: Handle of frontend auth here append
+    '''
     return RedirectResponse(
-        url=f"{frontend_url.rstrip('/')}/auth/google/callback?{query}",
+        
+        url=f"https://{frontend_url.rstrip('/')}",
         status_code=status.HTTP_302_FOUND,
         headers=response.headers 
     )

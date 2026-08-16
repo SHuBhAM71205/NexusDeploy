@@ -10,6 +10,12 @@ class Settings(BaseSettings):
         extra="ignore",
         case_sensitive=True,
     )
+    #POSTGRES
+    PG_DB_NAME :str 
+    PG_DB_USER :str
+    PG_DB_PASSWORD :str 
+    PG_DB_HOST :str
+    PG_DB_PORT :int
     
     # Project Settings
     PROJECT_NAME: str = "NexusDeploy API"
@@ -72,6 +78,6 @@ class Settings(BaseSettings):
     REACT_APP_FRONTEND_PORT: int
     @computed_field
     def REACT_APP_FRONTEND_URL(self) -> str:
-        return f"{self.REACT_APP_FRONTEND_HOST}"
+        return f"{self.REACT_APP_FRONTEND_HOST}:{self.REACT_APP_FRONTEND_PORT}"
 
 settings = Settings()  # type:ignore
