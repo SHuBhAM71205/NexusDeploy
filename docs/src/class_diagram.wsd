@@ -1,0 +1,213 @@
+@startuml NexusDeploy_Class
+
+title Nexus Deploy - Class Diagram
+
+skinparam classAttributeIconSize 0
+skinparam shadowing false
+
+class User {
+    +id: UUID
+    +name: String
+    +email: String
+    +passwordHash: String
+    +status: UserStatus
+    +createdAt: DateTime
+    +login()
+    +logout()
+}
+
+class Role {
+    +id: UUID
+    +name: String
+}
+
+class Project {
+    +id: UUID
+    +name: String
+    +description: String
+    +createdAt: DateTime
+    +createPipeline()
+    +configureEnvironment()
+}
+
+class Repository {
+    +id: UUID
+    +provider: String
+    +url: String
+    +branch: String
+    +accessToken: String
+    +connect()
+    +disconnect()
+}
+
+class Pipeline {
+    +id: UUID
+    +name: String
+    +status: PipelineStatus
+    +createdAt: DateTime
+    +trigger()
+    +cancel()
+    +retry()
+}
+
+class PipelineStep {
+    +id: UUID
+    +name: String
+    +type: StepType
+    +order: Integer
+    +command: String
+    +execute()
+}
+
+class PipelineRun {
+    +id: UUID
+    +status: RunStatus
+    +startedAt: DateTime
+    +finishedAt: DateTime
+    +commitHash: String
+    +start()
+    +complete()
+    +fail()
+}
+
+class BuildArtifact {
+    +id: UUID
+    +name: String
+    +version: String
+    +location: String
+    +size: Long
+}
+
+class ContainerImage {
+    +id: UUID
+    +repository: String
+    +tag: String
+    +digest: String
+}
+
+class Environment {
+    +id: UUID
+    +name: String
+    +type: String
+    +variables: Map
+}
+
+class Deployment {
+    +id: UUID
+    +version: String
+    +status: DeploymentStatus
+    +strategy: DeploymentStrategy
+    +startedAt: DateTime
+    +finishedAt: DateTime
+    +deploy()
+    +rollback()
+}
+
+class Release {
+    +id: UUID
+    +version: String
+    +status: String
+    +createdAt: DateTime
+}
+
+class DeploymentTarget {
+    +id: UUID
+    +type: String
+    +endpoint: String
+    +deploy()
+    +healthCheck()
+}
+
+class Webhook {
+    +id: UUID
+    +event: String
+    +payload: JSON
+    +receivedAt: DateTime
+}
+
+class AuditRecord {
+    +id: UUID
+    +action: String
+    +timestamp: DateTime
+    +ipAddress: String
+}
+
+class Notification {
+    +id: UUID
+    +type: String
+    +message: String
+    +status: String
+    +send()
+}
+
+class Secret {
+    +id: UUID
+    +name: String
+    +value: String
+    +createdAt: DateTime
+}
+
+enum UserStatus {
+    ACTIVE
+    DISABLED
+}
+
+enum PipelineStatus {
+    ACTIVE
+    DISABLED
+}
+
+enum RunStatus {
+    QUEUED
+    RUNNING
+    SUCCESS
+    FAILED
+    CANCELLED
+}
+
+enum DeploymentStatus {
+    PENDING
+    RUNNING
+    SUCCESS
+    FAILED
+    ROLLED_BACK
+}
+
+enum DeploymentStrategy {
+    ROLLING
+    BLUE_GREEN
+    CANARY
+}
+
+enum StepType {
+    BUILD
+    TEST
+    LINT
+    DOCKER_BUILD
+    ARTIFACT
+    DEPLOY
+}
+
+User "*" -- "*" Role
+User "1" -- "*" Project
+Project "1" -- "*" Repository
+Project "1" -- "*" Pipeline
+Project "1" -- "*" Environment
+
+Pipeline "1" -- "*" PipelineStep
+Pipeline "1" -- "*" PipelineRun
+
+PipelineRun "1" -- "*" BuildArtifact
+PipelineRun "0..1" -- "1" ContainerImage
+
+Environment "1" -- "*" Deployment
+Deployment "1" -- "1" Release
+Deployment "*" -- "1" DeploymentTarget
+
+Repository "1" -- "*" Webhook
+
+Project "1" -- "*" Secret
+User "1" -- "*" AuditRecord
+User "1" -- "*" Notification
+
+@enduml

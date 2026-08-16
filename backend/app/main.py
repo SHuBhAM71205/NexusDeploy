@@ -43,8 +43,6 @@ app.add_middleware(
 # Mount all v1 API routes under /api/v1
 app.include_router(api_router, prefix=settings.API_V1_STR)
 
-# Add auth router
-
 @app.get("/")
 def root():
     return {

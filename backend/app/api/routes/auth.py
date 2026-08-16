@@ -171,5 +171,5 @@ async def google_oauth_callback(request: Request, response: Response, db: AsyncD
         
         url=f"https://{frontend_url.rstrip('/')}",
         status_code=status.HTTP_302_FOUND,
-        headers=response.headers 
+        headers=response.headers
     )
