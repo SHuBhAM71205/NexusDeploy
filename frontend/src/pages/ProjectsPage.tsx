@@ -6,7 +6,6 @@ import {
   ExternalLink,
   GitBranch,
   Rocket,
-  KeyRound,
   Trash2,
   LayoutGrid,
   List,
@@ -14,11 +13,13 @@ import {
   Clock,
   Eye,
   EyeOff,
+  Settings,
 } from 'lucide-react';
 import { Card } from '../components/ui/Card';
 import { Modal } from '../components/ui/Modal';
 import { NewProjectModal } from '../components/ui/NewProjectModal';
 import { TriggerDeployModal } from '../components/ui/TriggerDeployModal';
+import { ProjectSettingsDrawer } from '../components/projects/ProjectSettingsDrawer';
 import { api } from '../services/api';
 import type { Project, EnvVar } from '../types';
 
@@ -31,6 +32,7 @@ export function ProjectsPage() {
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [isNewModalOpen, setIsNewModalOpen] = useState(false);
   const [deployTargetProject, setDeployTargetProject] = useState<Project | null>(null);
+  const [configDrawerProject, setConfigDrawerProject] = useState<Project | null>(null);
   const [selectedEnvProject, setSelectedEnvProject] = useState<Project | null>(null);
   const [envVars, setEnvVars] = useState<EnvVar[]>([]);
   const [showSecrets, setShowSecrets] = useState<{ [key: string]: boolean }>({});
@@ -254,12 +256,12 @@ export function ProjectsPage() {
                   )}
                   <button
                     type="button"
-                    onClick={() => handleOpenEnvModal(proj)}
-                    className="flex items-center gap-1 rounded-lg border border-slate-200 bg-slate-50 px-2.5 py-1.5 text-xs text-slate-700 hover:bg-slate-100 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-300 dark:hover:bg-slate-800 dark:hover:text-white"
-                    title="Manage Environment Secrets"
+                    onClick={() => setConfigDrawerProject(proj)}
+                    className="flex items-center gap-1 rounded-lg border border-slate-200 bg-slate-50 px-2.5 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-100 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-300 dark:hover:bg-slate-800 dark:hover:text-white transition"
+                    title="Project Settings & Build Config"
                   >
-                    <KeyRound size={12} />
-                    <span>Env</span>
+                    <Settings size={12} />
+                    <span>Settings</span>
                   </button>
                 </div>
 
@@ -455,6 +457,13 @@ export function ProjectsPage() {
           }}
         />
       )}
+
+      {/* Project Settings & Env Drawer */}
+      <ProjectSettingsDrawer
+        project={configDrawerProject}
+        onClose={() => setConfigDrawerProject(null)}
+        onSaved={loadProjects}
+      />
     </div>
   );
 }

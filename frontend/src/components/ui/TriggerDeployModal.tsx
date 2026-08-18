@@ -1,7 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Modal } from './Modal';
-import { Play, GitBranch, MessageSquare } from 'lucide-react';
+import { Play, GitBranch, MessageSquare, Key, HardDrive, ShieldCheck } from 'lucide-react';
 import type { Project } from '../../types';
+import { agentApi } from '../../services/agentApi';
 
 interface TriggerDeployModalProps {
   isOpen: boolean;
@@ -23,6 +24,37 @@ export function TriggerDeployModal({
   const [branch, setBranch] = useState('main');
   const [commitMessage, setCommitMessage] = useState('Manual trigger from dashboard');
 
+  const selectedProj = projects.find((p) => p.id === projectId) || projects[0];
+  const [rootDirectory, setRootDirectory] = useState(selectedProj?.root_directory || './');
+  const [tokenInput, setTokenInput] = useState('');
+  const [tokenSaved, setTokenSaved] = useState(false);
+  const [savingToken, setSavingToken] = useState(false);
+
+  useEffect(() => {
+    if (selectedProj) {
+      setRootDirectory(selectedProj.root_directory || './');
+      const platformKey = selectedProj.platform || 'vercel';
+      agentApi.getCredentialStatus(platformKey).then((res) => {
+        setTokenSaved(res.exists);
+      }).catch(() => setTokenSaved(false));
+    }
+  }, [projectId, selectedProj]);
+
+  const handleSaveToken = async () => {
+    if (!tokenInput || !selectedProj) return;
+    const platformKey = selectedProj.platform || 'vercel';
+    setSavingToken(true);
+    try {
+      await agentApi.saveCredential(platformKey, tokenInput);
+      setTokenSaved(true);
+      setTokenInput('');
+    } catch (e: any) {
+      alert(`Error saving credential: ${e?.message || e}`);
+    } finally {
+      setSavingToken(false);
+    }
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     const pid = projectId || (projects[0]?.id ?? '');
@@ -39,11 +71,12 @@ export function TriggerDeployModal({
     <Modal
       isOpen={isOpen}
       onClose={onClose}
-      title="Trigger Instant Deployment"
-      description="Queue an immediate build and release for your service."
+      title="Trigger Instant Host Deployment"
+      description="Select project target, confirm path/tokens, and trigger live cloud build."
       maxWidth="md"
     >
       <form onSubmit={handleSubmit} className="space-y-4">
+        {/* Target Project Dropdown */}
         <div>
           <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300">Target Project</label>
           <select
@@ -53,12 +86,64 @@ export function TriggerDeployModal({
           >
             {projects.map((p) => (
               <option key={p.id} value={p.id}>
-                {p.name} ({p.framework})
+                {p.name} ({p.framework} • {p.platform?.toUpperCase() || 'VERCEL'})
               </option>
             ))}
           </select>
         </div>
 
+        {/* Source Folder / Repo Path */}
+        <div>
+          <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
+            <HardDrive size={14} className="text-indigo-600 dark:text-indigo-400" />
+            <span>Target Folder Path / Repo URL</span>
+          </label>
+          <input
+            type="text"
+            value={rootDirectory}
+            onChange={(e) => setRootDirectory(e.target.value)}
+            className="mt-1 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-mono text-slate-900 shadow-sm focus:border-indigo-500 focus:outline-none dark:border-slate-700 dark:bg-slate-950 dark:text-white"
+          />
+        </div>
+
+        {/* Platform Token Section */}
+        <div className="rounded-xl border border-slate-200 bg-slate-50 p-3 space-y-2 dark:border-slate-800 dark:bg-slate-950/80">
+          <div className="flex items-center justify-between">
+            <label className="text-xs font-semibold text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
+              <Key size={14} className="text-indigo-600 dark:text-indigo-400" />
+              <span>{selectedProj?.platform?.toUpperCase() || 'PLATFORM'} API Token</span>
+            </label>
+            {tokenSaved ? (
+              <span className="flex items-center gap-1 text-[10px] font-semibold text-emerald-600 dark:text-emerald-400">
+                <ShieldCheck size={12} /> Saved in Vault
+              </span>
+            ) : (
+              <span className="text-[10px] font-semibold text-amber-600 dark:text-amber-400">
+                Token Required
+              </span>
+            )}
+          </div>
+
+          <div className="flex gap-2">
+            <input
+              type="password"
+              placeholder={`Enter API Token for ${selectedProj?.platform?.toUpperCase() || 'Provider'}...`}
+              value={tokenInput}
+              onChange={(e) => setTokenInput(e.target.value)}
+              className="flex-1 rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-xs text-slate-900 focus:border-indigo-500 focus:outline-none dark:border-slate-700 dark:bg-slate-900 dark:text-white"
+            />
+            <button
+              type="button"
+              disabled={!tokenInput || savingToken}
+              onClick={handleSaveToken}
+              className="rounded-lg bg-indigo-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-indigo-500 disabled:opacity-50"
+            >
+              {savingToken ? 'Saving...' : 'Save Token'}
+            </button>
+          </div>
+        </div>
+
+        {/* Environment & Branch */}
         <div className="grid gap-3 sm:grid-cols-2">
           <div>
             <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300">Environment</label>
@@ -87,6 +172,7 @@ export function TriggerDeployModal({
           </div>
         </div>
 
+        {/* Note */}
         <div>
           <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300">Deployment Note</label>
           <div className="relative mt-1">
@@ -101,6 +187,7 @@ export function TriggerDeployModal({
           </div>
         </div>
 
+        {/* Actions */}
         <div className="flex items-center justify-end gap-3 border-t border-slate-100 dark:border-slate-800 pt-4">
           <button
             type="button"
@@ -113,7 +200,7 @@ export function TriggerDeployModal({
             type="submit"
             className="flex items-center gap-2 rounded-xl bg-indigo-600 px-4 py-2 text-xs font-semibold text-white shadow-sm shadow-indigo-600/20 hover:bg-indigo-500"
           >
-            <Play size={13} /> Start Deployment
+            <Play size={13} /> Start Host Deployment
           </button>
         </div>
       </form>

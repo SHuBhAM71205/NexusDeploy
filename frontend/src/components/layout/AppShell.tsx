@@ -12,15 +12,19 @@ import {
   Sun,
   Moon,
   Laptop,
+  LogOut,
+  User as UserIcon,
 } from 'lucide-react';
 import { NavLink, Outlet } from 'react-router-dom';
 import { cn } from '../../lib/utils';
 import { api } from '../../services/api';
 import { useTheme } from '../../context/ThemeContext';
+import { useAuth } from '../../context/AuthContext';
 import type { Project, Deployment } from '../../types';
 import { NewProjectModal } from '../ui/NewProjectModal';
 import { TriggerDeployModal } from '../ui/TriggerDeployModal';
 import { CommandSearchModal } from '../ui/CommandSearchModal';
+import { AuthModal } from '../auth/AuthModal';
 
 const navigation = [
   { to: '/', label: 'Overview', icon: LayoutDashboard, end: true },
@@ -38,7 +42,8 @@ export function AppShell() {
   const [showNotifications, setShowNotifications] = useState(false);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
 
-  const { theme, resolvedTheme, setTheme } = useTheme();
+  const { theme, setTheme } = useTheme();
+  const { user, openAuthModal, logout } = useAuth();
 
   const loadData = async () => {
     try {
@@ -293,16 +298,39 @@ export function AppShell() {
               )}
             </div>
 
-            {/* User Profile */}
-            <div className="flex items-center gap-2 rounded-xl border border-slate-200 bg-slate-50 px-2.5 py-1.5 dark:border-slate-800 dark:bg-slate-900/60">
-              <span className="grid size-6 place-items-center rounded-full bg-gradient-to-tr from-indigo-500 to-violet-500 text-[11px] font-bold text-white">
-                JD
-              </span>
-              <div className="hidden sm:flex flex-col text-left">
-                <span className="text-xs font-semibold text-slate-900 dark:text-white leading-none">Jane Doe</span>
-                <span className="text-[10px] text-slate-500 dark:text-slate-400 leading-tight">Acme Inc.</span>
+            {/* User Profile / Auth Action */}
+            {user ? (
+              <div className="flex items-center gap-2 rounded-xl border border-slate-200 bg-slate-50 px-2.5 py-1.5 dark:border-slate-800 dark:bg-slate-900/60">
+                <span className="grid size-6 place-items-center rounded-full bg-gradient-to-tr from-indigo-500 to-violet-500 text-[11px] font-bold text-white uppercase">
+                  {user.username ? user.username.substring(0, 2) : 'US'}
+                </span>
+                <div className="hidden sm:flex flex-col text-left">
+                  <span className="text-xs font-semibold text-slate-900 dark:text-white leading-none">
+                    {user.full_name || user.username}
+                  </span>
+                  <span className="text-[10px] text-slate-500 dark:text-slate-400 leading-tight">
+                    {user.role || user.email}
+                  </span>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => logout()}
+                  title="Sign Out"
+                  className="ml-1 rounded-lg p-1 text-slate-400 hover:bg-slate-200 hover:text-slate-700 dark:hover:bg-slate-800 dark:hover:text-white transition"
+                >
+                  <LogOut size={14} />
+                </button>
               </div>
-            </div>
+            ) : (
+              <button
+                type="button"
+                onClick={openAuthModal}
+                className="flex items-center gap-1.5 rounded-xl bg-indigo-600 px-3.5 py-1.5 text-xs font-semibold text-white shadow-sm shadow-indigo-600/20 hover:bg-indigo-500 active:scale-[0.98] transition"
+              >
+                <UserIcon size={14} />
+                <span>Sign In</span>
+              </button>
+            )}
           </div>
         </header>
 
@@ -332,6 +360,8 @@ export function AppShell() {
         projects={projects}
         deployments={deployments}
       />
+
+      <AuthModal />
     </div>
   );
 }

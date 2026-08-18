@@ -11,6 +11,7 @@ import {
   CheckCircle2,
 } from 'lucide-react';
 import { Card } from '../components/ui/Card';
+import { ApiKeySecretModal } from '../components/settings/ApiKeySecretModal';
 import { api } from '../services/api';
 import type { WorkspaceSettings } from '../types';
 
@@ -22,6 +23,8 @@ export function SettingsPage() {
   const [copiedKey, setCopiedKey] = useState<string | null>(null);
   const [saved, setSaved] = useState(false);
   const [newKeyName, setNewKeyName] = useState('');
+  const [createdSecretKey, setCreatedSecretKey] = useState<string | null>(null);
+  const [createdSecretName, setCreatedSecretName] = useState('');
 
   useEffect(() => {
     const loadSettings = async () => {
@@ -56,9 +59,13 @@ export function SettingsPage() {
   };
 
   const handleCreateApiKey = async () => {
-    if (!newKeyName.trim()) return;
+    const keyTitle = newKeyName.trim();
+    if (!keyTitle) return;
     try {
-      const created = await api.createApiKey(newKeyName.trim());
+      const created = await api.createApiKey(keyTitle);
+      const rawSecretToken = `nxd_live_${Math.random().toString(36).substring(2, 15)}${Math.random().toString(36).substring(2, 15)}`;
+      setCreatedSecretName(keyTitle);
+      setCreatedSecretKey(rawSecretToken);
       if (settings) {
         setSettings({
           ...settings,
@@ -290,6 +297,13 @@ export function SettingsPage() {
           </Card>
         </div>
       </div>
+
+      {/* Secret Reveal Modal */}
+      <ApiKeySecretModal
+        rawSecret={createdSecretKey}
+        keyName={createdSecretName}
+        onClose={() => setCreatedSecretKey(null)}
+      />
     </div>
   );
 }

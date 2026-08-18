@@ -35,6 +35,7 @@ export interface Project {
   staging_url?: string;
   total_deploys: number;
   active_deployments_count: number;
+  platform?: string;
   domains: string[];
   environment_variables: EnvVar[];
 }
@@ -120,3 +121,32 @@ export interface WorkspaceSettings {
   notifications_enabled?: boolean;
   api_keys: ApiKey[];
 }
+
+export interface User {
+  id: string;
+  email: string;
+  username: string;
+  full_name?: string;
+  role?: string;
+  avatar_url?: string;
+}
+
+export interface LoginCredentials {
+  email: string;
+  password?: string;
+}
+
+export interface RegisterData {
+  email: string;
+  password?: string;
+  username: string;
+  full_name?: string;
+}
+
+export interface AuthResponse {
+  access_token: string;
+  refresh_token?: string;
+  token_type?: string;
+  user?: User;
+}
+

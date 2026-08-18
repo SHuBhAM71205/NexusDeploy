@@ -10,8 +10,7 @@ import {
 } from 'lucide-react';
 import { Card } from '../components/ui/Card';
 import { StatusBadge, EnvironmentBadge } from '../components/ui/Badge';
-import { Modal } from '../components/ui/Modal';
-import { TerminalLogs } from '../components/ui/TerminalLogs';
+import { DeploymentLogsModal } from '../components/deployments/DeploymentLogsModal';
 import { RollbackModal } from '../components/ui/RollbackModal';
 import { TriggerDeployModal } from '../components/ui/TriggerDeployModal';
 import { api } from '../services/api';
@@ -258,24 +257,10 @@ export function DeploymentsPage() {
       </Card>
 
       {/* Terminal Logs Modal */}
-      {selectedDeployment && (
-        <Modal
-          isOpen={Boolean(selectedDeployment)}
-          onClose={() => setSelectedDeployment(null)}
-          title={`Deployment Build Logs • ${selectedDeployment.project_name}`}
-          description={`Tracking commit ${selectedDeployment.commit_hash} (${selectedDeployment.branch})`}
-          size="lg"
-        >
-          <TerminalLogs
-            deployment={selectedDeployment}
-            onRollback={() => {
-              const dep = selectedDeployment;
-              setSelectedDeployment(null);
-              setRollbackDeployment(dep);
-            }}
-          />
-        </Modal>
-      )}
+      <DeploymentLogsModal
+        deployment={selectedDeployment}
+        onClose={() => setSelectedDeployment(null)}
+      />
 
       {/* Rollback Modal */}
       <RollbackModal

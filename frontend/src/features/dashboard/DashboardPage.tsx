@@ -12,8 +12,8 @@ import {
 } from 'lucide-react';
 import { Card } from '../../components/ui/Card';
 import { StatusBadge, EnvironmentBadge } from '../../components/ui/Badge';
-import { Modal } from '../../components/ui/Modal';
-import { TerminalLogs } from '../../components/ui/TerminalLogs';
+import { ClusterHealthCard } from '../../components/dashboard/ClusterHealthCard';
+import { DeploymentLogsModal } from '../../components/deployments/DeploymentLogsModal';
 import { RollbackModal } from '../../components/ui/RollbackModal';
 import { NewProjectModal } from '../../components/ui/NewProjectModal';
 import { TriggerDeployModal } from '../../components/ui/TriggerDeployModal';
@@ -126,7 +126,7 @@ export function DashboardPage() {
             </p>
           </div>
           <h1 className="mt-1 text-2xl sm:text-3xl font-bold tracking-tight text-slate-900 dark:text-white">
-            Good morning, Jane
+            Good morning,
           </h1>
           <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
             Here is what is happening across your cloud infrastructure and active deployments.
@@ -177,6 +177,9 @@ export function DashboardPage() {
         ))}
       </div>
 
+      {/* Cluster Health & Infrastructure Metrics */}
+      <ClusterHealthCard />
+
       {/* Deployments & Active Workspaces */}
       <div className="grid gap-8 lg:grid-cols-[1fr_22rem]">
         {/* Left: Recent Deployments Table */}
@@ -194,11 +197,10 @@ export function DashboardPage() {
                   key={st}
                   type="button"
                   onClick={() => setFilterStatus(st)}
-                  className={`rounded-lg px-3 py-1 text-xs font-medium capitalize transition ${
-                    filterStatus === st
+                  className={`rounded-lg px-3 py-1 text-xs font-medium capitalize transition ${filterStatus === st
                       ? 'bg-white text-indigo-600 shadow-sm font-semibold dark:bg-indigo-600 dark:text-white'
                       : 'text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white'
-                  }`}
+                    }`}
                 >
                   {st}
                 </button>
@@ -349,24 +351,10 @@ export function DashboardPage() {
       </div>
 
       {/* Terminal Logs Modal */}
-      {selectedDeployment && (
-        <Modal
-          isOpen={Boolean(selectedDeployment)}
-          onClose={() => setSelectedDeployment(null)}
-          title={`Deployment Logs • ${selectedDeployment.project_name}`}
-          description={`Build details for commit ${selectedDeployment.commit_hash} on ${selectedDeployment.environment}`}
-          size="lg"
-        >
-          <TerminalLogs
-            deployment={selectedDeployment}
-            onRollback={() => {
-              const dep = selectedDeployment;
-              setSelectedDeployment(null);
-              setRollbackDeployment(dep);
-            }}
-          />
-        </Modal>
-      )}
+      <DeploymentLogsModal
+        deployment={selectedDeployment}
+        onClose={() => setSelectedDeployment(null)}
+      />
 
       {/* Rollback Modal */}
       <RollbackModal

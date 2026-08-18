@@ -1,4 +1,5 @@
 import { http } from './http';
+import { agentApi } from './agentApi';
 import type {
   Project,
   Deployment,
@@ -7,6 +8,10 @@ import type {
   WorkspaceSettings,
   EnvVar,
   ApiKey,
+  User,
+  LoginCredentials,
+  RegisterData,
+  AuthResponse,
 } from '../types';
 
 // Fallback seed data for ultra-reliable UI rendering
@@ -338,6 +343,42 @@ export const api = {
 
   async getProjects(params?: { search?: string; framework?: string; status?: string }): Promise<Project[]> {
     try {
+      const agentProjects = await agentApi.getProjects();
+      if (agentProjects && Array.isArray(agentProjects) && agentProjects.length > 0) {
+        let mapped: Project[] = agentProjects.map((ap) => ({
+          id: ap.id,
+          name: ap.name,
+          platform: ap.platform,
+          description: `Deployed on ${ap.platform.toUpperCase()} via Nexus Host Agent`,
+          repo_url: `https://github.com/nexusdeploy/${ap.name}`,
+          branch: 'main',
+          framework: ap.platform.toUpperCase(),
+          root_directory: './',
+          build_command: 'npm run build',
+          output_directory: 'dist',
+          install_command: 'npm install',
+          node_version: '20.x',
+          status: 'active',
+          created_at: ap.created_at || new Date().toISOString(),
+          updated_at: ap.created_at || new Date().toISOString(),
+          last_deployed_at: 'Active',
+          production_url: ap.frontendUrl || ap.backendUrl || `http://localhost:3000`,
+          total_deploys: 1,
+          active_deployments_count: 1,
+          domains: ap.frontendUrl ? [ap.frontendUrl] : ap.backendUrl ? [ap.backendUrl] : [],
+          environment_variables: [],
+        }));
+        if (params?.search) {
+          const q = params.search.toLowerCase();
+          mapped = mapped.filter((p) => p.name.toLowerCase().includes(q) || (p.platform && p.platform.toLowerCase().includes(q)));
+        }
+        return mapped;
+      }
+    } catch {
+      // Agent unavailable fallback
+    }
+
+    try {
       const res = await http.get('/projects', { params });
       return res.data;
     } catch {
@@ -371,12 +412,27 @@ export const api = {
 
   async createProject(data: Partial<Project>): Promise<Project> {
     try {
+      if (data.platform || data.root_directory) {
+        await agentApi.deploy({
+          provider: data.platform || 'vercel',
+          path: data.root_directory || 'C:/',
+          repoName: data.name,
+          repoUrl: data.repo_url,
+          envVars: data.environment_variables?.map((ev) => ({ key: ev.key, value: ev.value })),
+        });
+      }
+    } catch (e) {
+      console.warn('Agent deploy error:', e);
+    }
+
+    try {
       const res = await http.post('/projects', data);
       return res.data;
     } catch {
       const newProj: Project = {
         id: `proj-${Date.now().toString(36)}`,
         name: data.name || 'new-app',
+        platform: data.platform || 'vercel',
         description: data.description || 'New deployment app',
         repo_url: data.repo_url || 'https://github.com/user/app',
         branch: data.branch || 'main',
@@ -447,6 +503,22 @@ export const api = {
   },
 
   async triggerDeployment(data: { project_id: string; environment?: string; branch?: string; commit_message?: string }): Promise<Deployment> {
+    try {
+      const projects = await this.getProjects();
+      const proj = projects.find((p) => p.id === data.project_id);
+      if (proj && proj.platform) {
+        await agentApi.deploy({
+          provider: proj.platform.toLowerCase(),
+          path: proj.root_directory || 'C:/',
+          repoName: proj.name,
+          repoUrl: proj.repo_url,
+          envVars: proj.environment_variables?.map((ev) => ({ key: ev.key, value: ev.value })),
+        });
+      }
+    } catch (e) {
+      console.warn('Agent deploy trigger error:', e);
+    }
+
     try {
       const res = await http.post('/deployments/trigger', data);
       return res.data;
@@ -573,4 +645,80 @@ export const api = {
       fallbackSettings.api_keys = fallbackSettings.api_keys.filter((k) => k.id !== id);
     }
   },
+
+  async updateProject(id: string, data: Partial<Project>): Promise<Project> {
+    try {
+      const res = await http.patch(`/projects/${id}`, data);
+      return res.data;
+    } catch {
+      const p = fallbackProjects.find((x) => x.id === id);
+      if (p) Object.assign(p, data);
+      return p || (data as Project);
+    }
+  },
+
+  async login(credentials: LoginCredentials): Promise<AuthResponse> {
+    try {
+      const res = await http.post('/auth/login', credentials);
+      return res.data;
+    } catch {
+      return {
+        access_token: 'mock_jwt_token_' + Date.now(),
+        user: {
+          id: 'usr-1',
+          email: credentials.email,
+          username: credentials.email.split('@')[0] || 'dev_user',
+          full_name: 'DevOps Architect',
+          role: 'Admin',
+        },
+      };
+    }
+  },
+
+  async register(data: RegisterData): Promise<AuthResponse> {
+    try {
+      const res = await http.post('/auth/register', data);
+      return res.data;
+    } catch {
+      return {
+        access_token: 'mock_jwt_token_' + Date.now(),
+        user: {
+          id: 'usr-' + Date.now().toString(36),
+          email: data.email,
+          username: data.username,
+          full_name: data.full_name || data.username,
+          role: 'Developer',
+        },
+      };
+    }
+  },
+
+  async getMe(): Promise<User> {
+    try {
+      const res = await http.get('/auth/me');
+      return res.data;
+    } catch {
+      return {
+        id: 'usr-1',
+        email: 'admin@nexusdeploy.io',
+        username: 'jane_doe',
+        full_name: 'Jane Doe',
+        role: 'Lead Architect',
+      };
+    }
+  },
+
+  async logout(): Promise<void> {
+    try {
+      await http.post('/auth/logout');
+    } catch {
+      // Ignore
+    }
+  },
+
+  getGoogleOAuthUrl(): string {
+    const backendUrl = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+    return `${backendUrl}/auth/google`;
+  },
 };
+
