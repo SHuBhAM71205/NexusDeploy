@@ -19,7 +19,7 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
-  const [token, setToken] = useState<string | null>(() => localStorage.getItem('nexus_token'));
+  const [token, setToken] = useState<string | null>(() => sessionStorage.getItem('nexus_token'));
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState<boolean>(false);
 
@@ -30,7 +30,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const oauthUsername = urlParams.get('username');
 
     if (oauthToken) {
-      localStorage.setItem('nexus_token', oauthToken);
+      sessionStorage.setItem('nexus_token', oauthToken);
       setToken(oauthToken);
 
       // Clean query parameters from address bar cleanly
@@ -49,7 +49,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
 
     const initAuth = async () => {
-      const activeToken = localStorage.getItem('nexus_token');
+      const activeToken = sessionStorage.getItem('nexus_token');
       if (activeToken) {
         try {
           const currentUser = await api.getMe();
@@ -81,7 +81,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setIsLoading(true);
     try {
       const res = await api.login(credentials);
-      localStorage.setItem('nexus_token', res.access_token);
+      sessionStorage.setItem('nexus_token', res.access_token);
       setToken(res.access_token);
       if (res.user) {
         setUser(res.user);
@@ -99,7 +99,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setIsLoading(true);
     try {
       const res = await api.register(data);
-      localStorage.setItem('nexus_token', res.access_token);
+      sessionStorage.setItem('nexus_token', res.access_token);
       setToken(res.access_token);
       if (res.user) {
         setUser(res.user);
@@ -118,7 +118,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     try {
       await api.logout();
     } finally {
-      localStorage.removeItem('nexus_token');
+      sessionStorage.removeItem('nexus_token');
       setToken(null);
       setUser(null);
       setIsLoading(false);
