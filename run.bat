@@ -35,7 +35,7 @@ IF NOT EXIST "frontend\node_modules\" (
 where docker >nul 2>nul
 IF %ERRORLEVEL% EQU 0 (
     echo [INFO] Attempting to start PostgreSQL database via Docker Compose...
-    docker compose -f backend/docker-compose.yml up -d db >nul 2>nul
+    docker compose -f backend/docker-compose.yml up -d >nul 2>nul
     IF %ERRORLEVEL% EQU 0 (
         echo [SUCCESS] PostgreSQL container is running.
     ) ELSE (

@@ -168,12 +168,8 @@ async def google_oauth_callback(request: Request, response: Response, db: AsyncD
         TODO: Handle of frontend auth here append
     '''
     return RedirectResponse(
-<<<<<<< Updated upstream
-        
-        url=f"https://{frontend_url.rstrip('/')}",
-=======
         url=f"http://{frontend_url.rstrip('/')}",
->>>>>>> Stashed changes
+
         status_code=status.HTTP_302_FOUND,
         headers=response.headers
     )

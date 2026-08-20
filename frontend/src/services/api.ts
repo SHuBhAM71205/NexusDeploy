@@ -710,7 +710,8 @@ export const api = {
 
   async logout(): Promise<void> {
     try {
-      await http.post('/auth/logout');
+      const response = await http.post('/auth/logout');
+      console.log(response)
     } catch {
       // Ignore
     }
@@ -718,7 +719,7 @@ export const api = {
 
   getGoogleOAuthUrl(): string {
     const backendUrl = import.meta.env.VITE_API_URL || 'http://localhost:8000';
-    return `${backendUrl}/auth/google`;
+    return `${backendUrl}/auth/oauth/google`;
   },
 };
 

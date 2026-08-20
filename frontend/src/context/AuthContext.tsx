@@ -24,25 +24,25 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [isAuthModalOpen, setIsAuthModalOpen] = useState<boolean>(false);
 
   useEffect(() => {
-    // Check for Google OAuth redirect query params
+    // Check for Google usr redirect query params
     const urlParams = new URLSearchParams(window.location.search);
-    const oauthToken = urlParams.get('access_token');
-    const oauthUsername = urlParams.get('username');
+    const usrToken = urlParams.get('access_token');
+    const usrUsername = urlParams.get('username');
 
-    if (oauthToken) {
-      sessionStorage.setItem('nexus_token', oauthToken);
-      setToken(oauthToken);
+    if (usrToken) {
+      sessionStorage.setItem('nexus_token', usrToken);
+      setToken(usrToken);
 
       // Clean query parameters from address bar cleanly
       const cleanUrl = window.location.protocol + '//' + window.location.host + window.location.pathname;
       window.history.replaceState({ path: cleanUrl }, '', cleanUrl);
 
-      if (oauthUsername) {
+      if (usrUsername) {
         setUser({
           id: 'usr-google',
-          email: `${oauthUsername.toLowerCase().replace(/\s+/g, '.')}@gmail.com`,
-          username: oauthUsername,
-          full_name: oauthUsername,
+          email: `${usrUsername.toLowerCase().replace(/\s+/g, '.')}@gmail.com`,
+          username: usrUsername,
+          full_name: usrUsername,
           role: 'Developer',
         });
       }
