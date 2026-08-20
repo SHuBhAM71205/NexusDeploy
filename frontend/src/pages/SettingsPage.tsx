@@ -26,6 +26,17 @@ export function SettingsPage() {
   const [createdSecretKey, setCreatedSecretKey] = useState<string | null>(null);
   const [createdSecretName, setCreatedSecretName] = useState('');
 
+  const generateSecureToken = (length: number) => {
+    const alphabet = 'abcdefghijklmnopqrstuvwxyz0123456789';
+    const randomBytes = new Uint8Array(length);
+    window.crypto.getRandomValues(randomBytes);
+    let token = '';
+    for (let i = 0; i < length; i += 1) {
+      token += alphabet[randomBytes[i] % alphabet.length];
+    }
+    return token;
+  };
+
   useEffect(() => {
     const loadSettings = async () => {
       try {
@@ -63,7 +74,7 @@ export function SettingsPage() {
     if (!keyTitle) return;
     try {
       const created = await api.createApiKey(keyTitle);
-      const rawSecretToken = `nxd_live_${Math.random().toString(36).substring(2, 15)}${Math.random().toString(36).substring(2, 15)}`;
+      const rawSecretToken = `nxd_live_${generateSecureToken(26)}`;
       setCreatedSecretName(keyTitle);
       setCreatedSecretKey(rawSecretToken);
       if (settings) {
