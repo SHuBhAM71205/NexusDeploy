@@ -61,7 +61,9 @@ export function FolderPickerModal({
         {browseData?.drives && browseData.drives.length > 0 && (
           <div className="flex items-center gap-2 pb-2 border-b border-slate-100 dark:border-slate-800">
             <HardDrive size={16} className="text-indigo-600 dark:text-indigo-400 shrink-0" />
-            <span className="text-xs font-semibold text-slate-700 dark:text-slate-300">Host Drives:</span>
+            <span className="text-xs font-semibold text-slate-700 dark:text-slate-300">
+              Host Drives:
+            </span>
             <div className="flex gap-1.5 overflow-x-auto">
               {browseData.drives.map((drive) => (
                 <button
@@ -121,7 +123,9 @@ export function FolderPickerModal({
                 >
                   <div className="flex items-center gap-2">
                     <Folder size={16} className="text-amber-500 shrink-0" />
-                    <span className="font-medium text-slate-800 dark:text-slate-200">{item.name}</span>
+                    <span className="font-medium text-slate-800 dark:text-slate-200">
+                      {item.name}
+                    </span>
                   </div>
                   <ChevronRight size={14} className="text-slate-400" />
                 </button>

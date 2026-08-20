@@ -76,7 +76,12 @@ export function AppShell() {
     }
   };
 
-  const handleTriggerDeploy = async (data: { project_id: string; environment: string; branch: string; commit_message: string }) => {
+  const handleTriggerDeploy = async (data: {
+    project_id: string;
+    environment: string;
+    branch: string;
+    commit_message: string;
+  }) => {
     try {
       const dep = await api.triggerDeployment(data);
       notify(`Deployment ${dep.id} triggered for ${dep.project_name}!`);
@@ -101,13 +106,18 @@ export function AppShell() {
         <div>
           {/* Brand Logo */}
           <div className="mb-6 flex items-center justify-between px-2">
-            <a className="flex items-center gap-2.5 text-base font-bold tracking-tight text-slate-900 dark:text-white" href="/">
+            <a
+              className="flex items-center gap-2.5 text-base font-bold tracking-tight text-slate-900 dark:text-white"
+              href="/"
+            >
               <span className="grid size-8 place-items-center rounded-xl bg-gradient-to-tr from-indigo-600 via-indigo-500 to-violet-500 font-extrabold text-white shadow-md shadow-indigo-500/25">
                 N
               </span>
               <div className="flex flex-col">
                 <span className="text-sm font-bold leading-tight">NexusDeploy</span>
-                <span className="text-[10px] font-semibold text-indigo-600 dark:text-indigo-400">Cloud Orchestration</span>
+                <span className="text-[10px] font-semibold text-indigo-600 dark:text-indigo-400">
+                  Cloud Orchestration
+                </span>
               </div>
             </a>
           </div>
@@ -162,14 +172,20 @@ export function AppShell() {
         <div className="mt-8 space-y-3 px-2">
           <div className="rounded-2xl border border-slate-200 bg-slate-50/80 p-3.5 dark:border-slate-800/80 dark:bg-slate-900/60">
             <div className="flex items-center justify-between">
-              <span className="text-[11px] font-medium text-slate-500 dark:text-slate-400">Cluster Status</span>
+              <span className="text-[11px] font-medium text-slate-500 dark:text-slate-400">
+                Cluster Status
+              </span>
               <span className="relative flex size-2">
                 <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75" />
                 <span className="relative inline-flex size-2 rounded-full bg-emerald-500" />
               </span>
             </div>
-            <p className="mt-1 text-xs font-semibold text-emerald-600 dark:text-emerald-400">All Systems Operational</p>
-            <p className="text-[10px] text-slate-400 dark:text-slate-500 mt-0.5">4/4 Edge Regions Online</p>
+            <p className="mt-1 text-xs font-semibold text-emerald-600 dark:text-emerald-400">
+              All Systems Operational
+            </p>
+            <p className="text-[10px] text-slate-400 dark:text-slate-500 mt-0.5">
+              4/4 Edge Regions Online
+            </p>
           </div>
 
           <a
@@ -275,23 +291,35 @@ export function AppShell() {
               {showNotifications && (
                 <div className="absolute right-0 mt-2 w-80 rounded-2xl border border-slate-200 bg-white p-3 shadow-xl z-50 dark:border-slate-800 dark:bg-slate-900">
                   <div className="flex items-center justify-between border-b border-slate-100 pb-2 px-2 dark:border-slate-800">
-                    <span className="text-xs font-semibold text-slate-900 dark:text-white">Notifications</span>
-                    <span className="text-[10px] text-indigo-600 dark:text-indigo-400 cursor-pointer">Mark all read</span>
+                    <span className="text-xs font-semibold text-slate-900 dark:text-white">
+                      Notifications
+                    </span>
+                    <span className="text-[10px] text-indigo-600 dark:text-indigo-400 cursor-pointer">
+                      Mark all read
+                    </span>
                   </div>
                   <div className="mt-2 space-y-2 text-xs">
                     <div className="rounded-xl bg-slate-50 p-2.5 border border-slate-100 dark:bg-slate-950/60 dark:border-slate-800">
                       <div className="flex items-center justify-between text-slate-700 dark:text-slate-300">
-                        <span className="font-semibold text-emerald-600 dark:text-emerald-400">Deploy Succeeded</span>
+                        <span className="font-semibold text-emerald-600 dark:text-emerald-400">
+                          Deploy Succeeded
+                        </span>
                         <span className="text-[10px] text-slate-400">2m ago</span>
                       </div>
-                      <p className="mt-0.5 text-slate-500 dark:text-slate-400 text-[11px]">api-gateway (main) is live on production edge.</p>
+                      <p className="mt-0.5 text-slate-500 dark:text-slate-400 text-[11px]">
+                        api-gateway (main) is live on production edge.
+                      </p>
                     </div>
                     <div className="rounded-xl bg-slate-50 p-2.5 border border-slate-100 dark:bg-slate-950/60 dark:border-slate-800">
                       <div className="flex items-center justify-between text-slate-700 dark:text-slate-300">
-                        <span className="font-semibold text-amber-600 dark:text-amber-300">Build in progress</span>
+                        <span className="font-semibold text-amber-600 dark:text-amber-300">
+                          Build in progress
+                        </span>
                         <span className="text-[10px] text-slate-400">18m ago</span>
                       </div>
-                      <p className="mt-0.5 text-slate-500 dark:text-slate-400 text-[11px]">web-dashboard PR #42 started compiling.</p>
+                      <p className="mt-0.5 text-slate-500 dark:text-slate-400 text-[11px]">
+                        web-dashboard PR #42 started compiling.
+                      </p>
                     </div>
                   </div>
                 </div>

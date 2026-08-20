@@ -1,5 +1,16 @@
 import { useState, useEffect } from 'react';
-import { X, Settings, Key, Save, Plus, Trash2, Eye, EyeOff, Loader2, CheckCircle2 } from 'lucide-react';
+import {
+  X,
+  Settings,
+  Key,
+  Save,
+  Plus,
+  Trash2,
+  Eye,
+  EyeOff,
+  Loader2,
+  CheckCircle2,
+} from 'lucide-react';
 import type { Project, EnvVar } from '../../types';
 import { api } from '../../services/api';
 
@@ -86,10 +97,7 @@ export function ProjectSettingsDrawer({ project, onClose, onSaved }: ProjectSett
   };
 
   const addEnvVar = () => {
-    setEnvVars([
-      ...envVars,
-      { key: '', value: '', target: 'all', is_secret: false },
-    ]);
+    setEnvVars([...envVars, { key: '', value: '', target: 'all', is_secret: false }]);
   };
 
   const updateEnvVar = (index: number, field: keyof EnvVar, val: any) => {
@@ -126,7 +134,9 @@ export function ProjectSettingsDrawer({ project, onClose, onSaved }: ProjectSett
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <h2 className="text-base font-bold text-slate-900 dark:text-white">{project.name}</h2>
+                <h2 className="text-base font-bold text-slate-900 dark:text-white">
+                  {project.name}
+                </h2>
                 <span className="rounded-full bg-slate-200 dark:bg-slate-800 px-2.5 py-0.5 text-[10px] font-semibold text-slate-700 dark:text-slate-300">
                   {project.framework}
                 </span>
@@ -277,7 +287,11 @@ export function ProjectSettingsDrawer({ project, onClose, onSaved }: ProjectSett
                   disabled={isSubmitting}
                   className="flex items-center gap-2 rounded-xl bg-indigo-600 px-4 py-2 text-xs font-semibold text-white shadow-md shadow-indigo-600/20 hover:bg-indigo-500 active:scale-95 disabled:opacity-50 transition"
                 >
-                  {isSubmitting ? <Loader2 size={14} className="animate-spin" /> : <Save size={14} />}
+                  {isSubmitting ? (
+                    <Loader2 size={14} className="animate-spin" />
+                  ) : (
+                    <Save size={14} />
+                  )}
                   <span>Save Settings</span>
                 </button>
               </div>
@@ -379,7 +393,11 @@ export function ProjectSettingsDrawer({ project, onClose, onSaved }: ProjectSett
                   disabled={isSubmitting}
                   className="flex items-center gap-2 rounded-xl bg-indigo-600 px-4 py-2 text-xs font-semibold text-white shadow-md shadow-indigo-600/20 hover:bg-indigo-500 active:scale-95 disabled:opacity-50 transition"
                 >
-                  {isSubmitting ? <Loader2 size={14} className="animate-spin" /> : <Save size={14} />}
+                  {isSubmitting ? (
+                    <Loader2 size={14} className="animate-spin" />
+                  ) : (
+                    <Save size={14} />
+                  )}
                   <span>Save Environment Variables</span>
                 </button>
               </div>

@@ -23,7 +23,9 @@ export function ClusterHealthCard() {
     // Subtle real-time fluctuation simulation
     const interval = setInterval(() => {
       setCpuUsage((prev) => Math.min(95, Math.max(15, prev + (Math.floor(Math.random() * 7) - 3))));
-      setMemoryUsage((prev) => Math.min(90, Math.max(30, prev + (Math.floor(Math.random() * 5) - 2))));
+      setMemoryUsage((prev) =>
+        Math.min(90, Math.max(30, prev + (Math.floor(Math.random() * 5) - 2))),
+      );
     }, 4000);
     return () => clearInterval(interval);
   }, []);
@@ -38,7 +40,9 @@ export function ClusterHealthCard() {
           </div>
           <div>
             <div className="flex items-center gap-2">
-              <h3 className="text-base font-bold text-slate-900 dark:text-white">Global Edge Cluster Health</h3>
+              <h3 className="text-base font-bold text-slate-900 dark:text-white">
+                Global Edge Cluster Health
+              </h3>
               <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/10 border border-emerald-500/30 px-2.5 py-0.5 text-[10px] font-semibold text-emerald-600 dark:text-emerald-400">
                 <ShieldCheck size={12} />
                 HEALTHY
@@ -82,7 +86,9 @@ export function ClusterHealthCard() {
               <HardDrive size={15} className="text-violet-500" />
               <span>Memory Utilization</span>
             </div>
-            <span className="font-mono text-slate-900 dark:text-white font-bold">{memoryUsage}%</span>
+            <span className="font-mono text-slate-900 dark:text-white font-bold">
+              {memoryUsage}%
+            </span>
           </div>
           <div className="h-2 w-full overflow-hidden rounded-full bg-slate-200 dark:bg-slate-800">
             <div
@@ -119,7 +125,9 @@ export function ClusterHealthCard() {
               className="flex items-center justify-between rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-3 text-xs"
             >
               <div>
-                <span className="font-semibold text-slate-900 dark:text-white block">{node.name}</span>
+                <span className="font-semibold text-slate-900 dark:text-white block">
+                  {node.name}
+                </span>
                 <span className="text-[10px] text-slate-400 font-mono">Ping: {node.latency}</span>
               </div>
               <span className="relative flex size-2.5">

@@ -39,7 +39,12 @@ const fallbackProjects: Project[] = [
     domains: ['api.nexusdeploy.io', 'api-gateway.nexusdeploy.app'],
     environment_variables: [
       { key: 'NODE_ENV', value: 'production', target: 'production', is_secret: false },
-      { key: 'DATABASE_URL', value: 'postgres://nexus:secret@db.internal:5432/gateway', target: 'all', is_secret: true },
+      {
+        key: 'DATABASE_URL',
+        value: 'postgres://nexus:secret@db.internal:5432/gateway',
+        target: 'all',
+        is_secret: true,
+      },
       { key: 'JWT_SECRET', value: 'nexus_sec_key_99218204', target: 'all', is_secret: true },
     ],
   },
@@ -65,7 +70,12 @@ const fallbackProjects: Project[] = [
     active_deployments_count: 1,
     domains: ['app.nexusdeploy.io', 'dashboard.nexusdeploy.app'],
     environment_variables: [
-      { key: 'VITE_API_URL', value: 'https://api-gateway.nexusdeploy.app/api/v1', target: 'all', is_secret: false },
+      {
+        key: 'VITE_API_URL',
+        value: 'https://api-gateway.nexusdeploy.app/api/v1',
+        target: 'all',
+        is_secret: false,
+      },
     ],
   },
   {
@@ -90,13 +100,19 @@ const fallbackProjects: Project[] = [
     active_deployments_count: 1,
     domains: ['billing.nexusdeploy.app'],
     environment_variables: [
-      { key: 'STRIPE_SECRET_KEY', value: 'sk_live_9921nexusdeploy', target: 'production', is_secret: true },
+      {
+        key: 'STRIPE_SECRET_KEY',
+        value: 'sk_live_9921nexusdeploy',
+        target: 'production',
+        is_secret: true,
+      },
     ],
   },
   {
     id: 'proj-4',
     name: 'auth-service',
-    description: 'OAuth2 / OIDC authentication service with multi-factor auth and biometric passkeys',
+    description:
+      'OAuth2 / OIDC authentication service with multi-factor auth and biometric passkeys',
     repo_url: 'https://github.com/nexusdeploy/auth-service',
     branch: 'main',
     framework: 'Go',
@@ -159,17 +175,58 @@ const fallbackDeployments: Deployment[] = [
     logs_count: 18,
     trigger_type: 'git_push',
     logs: [
-      { timestamp: '14:40:02', level: 'info', message: 'Cloning repository from github.com/nexusdeploy/api-gateway (branch: main)...' },
-      { timestamp: '14:40:05', level: 'info', message: 'Commit a8f3b21: feat: optimize edge caching headers' },
-      { timestamp: '14:40:08', level: 'info', message: 'Restoring build cache for node_modules... (Hit: 98%)' },
+      {
+        timestamp: '14:40:02',
+        level: 'info',
+        message: 'Cloning repository from github.com/nexusdeploy/api-gateway (branch: main)...',
+      },
+      {
+        timestamp: '14:40:05',
+        level: 'info',
+        message: 'Commit a8f3b21: feat: optimize edge caching headers',
+      },
+      {
+        timestamp: '14:40:08',
+        level: 'info',
+        message: 'Restoring build cache for node_modules... (Hit: 98%)',
+      },
       { timestamp: '14:40:12', level: 'info', message: 'Executing build command: npm run build' },
-      { timestamp: '14:40:25', level: 'info', message: 'TypeScript compilation passed with 0 errors.' },
-      { timestamp: '14:40:35', level: 'info', message: 'Generating static bundle and optimized server chunks...' },
-      { timestamp: '14:40:48', level: 'info', message: 'Containerizing image with distroless runtime base...' },
-      { timestamp: '14:41:00', level: 'info', message: 'Pushing image to registry nexus-cr.io/api-gateway:a8f3b21...' },
-      { timestamp: '14:41:15', level: 'info', message: 'Performing rolling update on cluster us-east-1 (3/3 healthy)...' },
-      { timestamp: '14:41:25', level: 'info', message: 'Health checks passed on all endpoints: /api/v1/health (200 OK)' },
-      { timestamp: '14:41:28', level: 'success', message: 'Deployment successfully routed to production edge nodes! Live at https://api-gateway.nexusdeploy.app' },
+      {
+        timestamp: '14:40:25',
+        level: 'info',
+        message: 'TypeScript compilation passed with 0 errors.',
+      },
+      {
+        timestamp: '14:40:35',
+        level: 'info',
+        message: 'Generating static bundle and optimized server chunks...',
+      },
+      {
+        timestamp: '14:40:48',
+        level: 'info',
+        message: 'Containerizing image with distroless runtime base...',
+      },
+      {
+        timestamp: '14:41:00',
+        level: 'info',
+        message: 'Pushing image to registry nexus-cr.io/api-gateway:a8f3b21...',
+      },
+      {
+        timestamp: '14:41:15',
+        level: 'info',
+        message: 'Performing rolling update on cluster us-east-1 (3/3 healthy)...',
+      },
+      {
+        timestamp: '14:41:25',
+        level: 'info',
+        message: 'Health checks passed on all endpoints: /api/v1/health (200 OK)',
+      },
+      {
+        timestamp: '14:41:28',
+        level: 'success',
+        message:
+          'Deployment successfully routed to production edge nodes! Live at https://api-gateway.nexusdeploy.app',
+      },
     ],
   },
   {
@@ -189,13 +246,37 @@ const fallbackDeployments: Deployment[] = [
     logs_count: 12,
     trigger_type: 'git_push',
     logs: [
-      { timestamp: '14:25:10', level: 'info', message: 'Pulling source ref refs/heads/feat/live-telemetry...' },
+      {
+        timestamp: '14:25:10',
+        level: 'info',
+        message: 'Pulling source ref refs/heads/feat/live-telemetry...',
+      },
       { timestamp: '14:25:15', level: 'info', message: 'Node version detected: 22.12.0' },
-      { timestamp: '14:25:20', level: 'info', message: 'Running npm install with clean dependencies cache...' },
-      { timestamp: '14:26:00', level: 'info', message: 'Transforming JSX/TSX modules with Vite AST pipeline...' },
-      { timestamp: '14:26:45', level: 'info', message: 'Bundling vendor chunks and code splitting...' },
-      { timestamp: '14:27:10', level: 'info', message: 'Running vitest unit suites (14 passed)...' },
-      { timestamp: '14:27:30', level: 'info', message: 'Building staging edge preview instance...' },
+      {
+        timestamp: '14:25:20',
+        level: 'info',
+        message: 'Running npm install with clean dependencies cache...',
+      },
+      {
+        timestamp: '14:26:00',
+        level: 'info',
+        message: 'Transforming JSX/TSX modules with Vite AST pipeline...',
+      },
+      {
+        timestamp: '14:26:45',
+        level: 'info',
+        message: 'Bundling vendor chunks and code splitting...',
+      },
+      {
+        timestamp: '14:27:10',
+        level: 'info',
+        message: 'Running vitest unit suites (14 passed)...',
+      },
+      {
+        timestamp: '14:27:30',
+        level: 'info',
+        message: 'Building staging edge preview instance...',
+      },
     ],
   },
   {
@@ -215,12 +296,28 @@ const fallbackDeployments: Deployment[] = [
     logs_count: 15,
     trigger_type: 'manual',
     logs: [
-      { timestamp: '13:42:00', level: 'info', message: 'Manual deployment triggered from NexusDeploy console.' },
+      {
+        timestamp: '13:42:00',
+        level: 'info',
+        message: 'Manual deployment triggered from NexusDeploy console.',
+      },
       { timestamp: '13:42:15', level: 'info', message: 'Checking out commit f1a23c4...' },
-      { timestamp: '13:42:40', level: 'info', message: 'Installing Python dependencies from requirements.txt...' },
-      { timestamp: '13:43:20', level: 'info', message: 'Running database migration check: alembic upgrade head (Up to date).' },
+      {
+        timestamp: '13:42:40',
+        level: 'info',
+        message: 'Installing Python dependencies from requirements.txt...',
+      },
+      {
+        timestamp: '13:43:20',
+        level: 'info',
+        message: 'Running database migration check: alembic upgrade head (Up to date).',
+      },
       { timestamp: '13:43:50', level: 'info', message: 'Warm starting ASGI uvicorn workers...' },
-      { timestamp: '13:44:10', level: 'success', message: 'Service successfully healthy on port 5000. Active routing updated.' },
+      {
+        timestamp: '13:44:10',
+        level: 'success',
+        message: 'Service successfully healthy on port 5000. Active routing updated.',
+      },
     ],
   },
   {
@@ -242,7 +339,11 @@ const fallbackDeployments: Deployment[] = [
     logs: [
       { timestamp: '10:30:00', level: 'info', message: 'Building Go binary with CGO_ENABLED=0...' },
       { timestamp: '10:30:45', level: 'info', message: 'Go tests passed: 42 test suites.' },
-      { timestamp: '10:31:15', level: 'success', message: 'Binary published to Kubernetes pod replicas.' },
+      {
+        timestamp: '10:31:15',
+        level: 'success',
+        message: 'Binary published to Kubernetes pod replicas.',
+      },
     ],
   },
   {
@@ -262,9 +363,21 @@ const fallbackDeployments: Deployment[] = [
     logs_count: 9,
     trigger_type: 'rollback',
     logs: [
-      { timestamp: 'Yesterday 16:00', level: 'warn', message: 'Rollback initiated: Reverting to deployment dep-985 (stable).' },
-      { timestamp: 'Yesterday 16:01', level: 'info', message: 'Swapping edge routing traffic DNS pointer to commit stable...' },
-      { timestamp: 'Yesterday 16:01', level: 'success', message: 'Rollback completed with zero downtime.' },
+      {
+        timestamp: 'Yesterday 16:00',
+        level: 'warn',
+        message: 'Rollback initiated: Reverting to deployment dep-985 (stable).',
+      },
+      {
+        timestamp: 'Yesterday 16:01',
+        level: 'info',
+        message: 'Swapping edge routing traffic DNS pointer to commit stable...',
+      },
+      {
+        timestamp: 'Yesterday 16:01',
+        level: 'success',
+        message: 'Rollback completed with zero downtime.',
+      },
     ],
   },
   {
@@ -284,17 +397,41 @@ const fallbackDeployments: Deployment[] = [
     logs_count: 8,
     trigger_type: 'git_push',
     logs: [
-      { timestamp: '1 day ago', level: 'info', message: 'Static generation completed for 48 markdown docs pages.' },
+      {
+        timestamp: '1 day ago',
+        level: 'info',
+        message: 'Static generation completed for 48 markdown docs pages.',
+      },
       { timestamp: '1 day ago', level: 'success', message: 'Published to global CDN edge caches.' },
     ],
   },
 ];
 
 const fallbackStats: DashboardStats = {
-  active_projects: { label: 'Active projects', value: '12', detail: '+2 this month', change_type: 'positive' },
-  successful_deploys: { label: 'Successful deploys', value: '98.6%', detail: 'Last 30 days', change_type: 'positive' },
-  avg_build_time: { label: 'Average build time', value: '1m 42s', detail: '14% faster than last week', change_type: 'positive' },
-  bandwidth_usage: { label: 'Monthly Bandwidth', value: '2.4 TB', detail: '68% of 5 TB quota', change_type: 'neutral' },
+  active_projects: {
+    label: 'Active projects',
+    value: '12',
+    detail: '+2 this month',
+    change_type: 'positive',
+  },
+  successful_deploys: {
+    label: 'Successful deploys',
+    value: '98.6%',
+    detail: 'Last 30 days',
+    change_type: 'positive',
+  },
+  avg_build_time: {
+    label: 'Average build time',
+    value: '1m 42s',
+    detail: '14% faster than last week',
+    change_type: 'positive',
+  },
+  bandwidth_usage: {
+    label: 'Monthly Bandwidth',
+    value: '2.4 TB',
+    detail: '68% of 5 TB quota',
+    change_type: 'neutral',
+  },
   total_deployments_today: 28,
   cluster_health: {
     status: 'operational',
@@ -309,11 +446,56 @@ const fallbackStats: DashboardStats = {
 };
 
 const fallbackActivities: ActivityItem[] = [
-  { id: 'act-1', action: 'Triggered deployment to production', project_name: 'api-gateway', user_name: 'Jane Doe', timestamp: '2 minutes ago', type: 'deploy', status: 'success', details: 'Commit a8f3b21 pushed to main branch' },
-  { id: 'act-2', action: 'Started automated build', project_name: 'web-dashboard', user_name: 'Alex Rivera', timestamp: '18 minutes ago', type: 'deploy', status: 'in_progress', details: 'PR #42 opened: feat/live-telemetry' },
-  { id: 'act-3', action: 'Updated environment secrets', project_name: 'billing-service', user_name: 'Jane Doe', timestamp: '1 hour ago', type: 'env_update', status: 'success', details: 'Rotated STRIPE_WEBHOOK_SECRET' },
-  { id: 'act-4', action: 'Added custom domain', project_name: 'api-gateway', user_name: 'Jane Doe', timestamp: '3 hours ago', type: 'domain_added', status: 'success', details: 'Bound api.nexusdeploy.io with auto SSL certificate' },
-  { id: 'act-5', action: 'Rolled back deployment', project_name: 'web-dashboard', user_name: 'Jane Doe', timestamp: 'Yesterday', type: 'rollback', status: 'success', details: 'Restored stable release dep-985' },
+  {
+    id: 'act-1',
+    action: 'Triggered deployment to production',
+    project_name: 'api-gateway',
+    user_name: 'Jane Doe',
+    timestamp: '2 minutes ago',
+    type: 'deploy',
+    status: 'success',
+    details: 'Commit a8f3b21 pushed to main branch',
+  },
+  {
+    id: 'act-2',
+    action: 'Started automated build',
+    project_name: 'web-dashboard',
+    user_name: 'Alex Rivera',
+    timestamp: '18 minutes ago',
+    type: 'deploy',
+    status: 'in_progress',
+    details: 'PR #42 opened: feat/live-telemetry',
+  },
+  {
+    id: 'act-3',
+    action: 'Updated environment secrets',
+    project_name: 'billing-service',
+    user_name: 'Jane Doe',
+    timestamp: '1 hour ago',
+    type: 'env_update',
+    status: 'success',
+    details: 'Rotated STRIPE_WEBHOOK_SECRET',
+  },
+  {
+    id: 'act-4',
+    action: 'Added custom domain',
+    project_name: 'api-gateway',
+    user_name: 'Jane Doe',
+    timestamp: '3 hours ago',
+    type: 'domain_added',
+    status: 'success',
+    details: 'Bound api.nexusdeploy.io with auto SSL certificate',
+  },
+  {
+    id: 'act-5',
+    action: 'Rolled back deployment',
+    project_name: 'web-dashboard',
+    user_name: 'Jane Doe',
+    timestamp: 'Yesterday',
+    type: 'rollback',
+    status: 'success',
+    details: 'Restored stable release dep-985',
+  },
 ];
 
 let fallbackSettings: WorkspaceSettings = {
@@ -326,8 +508,18 @@ let fallbackSettings: WorkspaceSettings = {
   auto_deploy_on_push: true,
   notifications_enabled: true,
   api_keys: [
-    { id: 'key-1', name: 'GitHub CI Pipeline', masked_key: 'nxd_live_••••••••9941', created_at: '2026-07-10' },
-    { id: 'key-2', name: 'Nexus CLI CLI Tool', masked_key: 'nxd_live_••••••••1288', created_at: '2026-08-01' },
+    {
+      id: 'key-1',
+      name: 'GitHub CI Pipeline',
+      masked_key: 'nxd_live_••••••••9941',
+      created_at: '2026-07-10',
+    },
+    {
+      id: 'key-2',
+      name: 'Nexus CLI CLI Tool',
+      masked_key: 'nxd_live_••••••••1288',
+      created_at: '2026-08-01',
+    },
   ],
 };
 
@@ -341,7 +533,11 @@ export const api = {
     }
   },
 
-  async getProjects(params?: { search?: string; framework?: string; status?: string }): Promise<Project[]> {
+  async getProjects(params?: {
+    search?: string;
+    framework?: string;
+    status?: string;
+  }): Promise<Project[]> {
     try {
       const agentProjects = await agentApi.getProjects();
       if (agentProjects && Array.isArray(agentProjects) && agentProjects.length > 0) {
@@ -370,7 +566,11 @@ export const api = {
         }));
         if (params?.search) {
           const q = params.search.toLowerCase();
-          mapped = mapped.filter((p) => p.name.toLowerCase().includes(q) || (p.platform && p.platform.toLowerCase().includes(q)));
+          mapped = mapped.filter(
+            (p) =>
+              p.name.toLowerCase().includes(q) ||
+              (p.platform && p.platform.toLowerCase().includes(q)),
+          );
         }
         return mapped;
       }
@@ -393,7 +593,9 @@ export const api = {
         );
       }
       if (params?.framework) {
-        list = list.filter((p) => p.framework.toLowerCase().includes(params.framework!.toLowerCase()));
+        list = list.filter((p) =>
+          p.framework.toLowerCase().includes(params.framework!.toLowerCase()),
+        );
       }
       return list;
     }
@@ -478,15 +680,23 @@ export const api = {
     }
   },
 
-  async getDeployments(params?: { project_id?: string; environment?: string; status?: string }): Promise<Deployment[]> {
+  async getDeployments(params?: {
+    project_id?: string;
+    environment?: string;
+    status?: string;
+  }): Promise<Deployment[]> {
     try {
       const res = await http.get('/deployments', { params });
       return res.data;
     } catch {
       let list = [...fallbackDeployments];
       if (params?.project_id) list = list.filter((d) => d.project_id === params.project_id);
-      if (params?.environment) list = list.filter((d) => d.environment.toLowerCase() === params.environment!.toLowerCase());
-      if (params?.status) list = list.filter((d) => d.status.toLowerCase() === params.status!.toLowerCase());
+      if (params?.environment)
+        list = list.filter(
+          (d) => d.environment.toLowerCase() === params.environment!.toLowerCase(),
+        );
+      if (params?.status)
+        list = list.filter((d) => d.status.toLowerCase() === params.status!.toLowerCase());
       return list;
     }
   },
@@ -502,7 +712,12 @@ export const api = {
     }
   },
 
-  async triggerDeployment(data: { project_id: string; environment?: string; branch?: string; commit_message?: string }): Promise<Deployment> {
+  async triggerDeployment(data: {
+    project_id: string;
+    environment?: string;
+    branch?: string;
+    commit_message?: string;
+  }): Promise<Deployment> {
     try {
       const projects = await this.getProjects();
       const proj = projects.find((p) => p.id === data.project_id);
@@ -541,7 +756,11 @@ export const api = {
         logs_count: 8,
         trigger_type: 'manual',
         logs: [
-          { timestamp: 'Just now', level: 'info', message: `Initializing deployment for ${proj.name}...` },
+          {
+            timestamp: 'Just now',
+            level: 'info',
+            message: `Initializing deployment for ${proj.name}...`,
+          },
           { timestamp: 'Just now', level: 'info', message: 'Pulling latest git changes...' },
           { timestamp: 'Just now', level: 'info', message: 'Building production bundle...' },
           { timestamp: 'Just now', level: 'success', message: `Live at ${proj.production_url}` },
@@ -554,12 +773,16 @@ export const api = {
     }
   },
 
-  async rollbackDeployment(data: { deployment_id: string; target_environment?: string }): Promise<Deployment> {
+  async rollbackDeployment(data: {
+    deployment_id: string;
+    target_environment?: string;
+  }): Promise<Deployment> {
     try {
       const res = await http.post('/deployments/rollback', data);
       return res.data;
     } catch {
-      const target = fallbackDeployments.find((d) => d.id === data.deployment_id) || fallbackDeployments[0];
+      const target =
+        fallbackDeployments.find((d) => d.id === data.deployment_id) || fallbackDeployments[0];
       const rollbackDep: Deployment = {
         id: `dep-${Math.floor(100 + Math.random() * 900)}`,
         project_id: target.project_id,
@@ -577,8 +800,16 @@ export const api = {
         logs_count: 5,
         trigger_type: 'rollback',
         logs: [
-          { timestamp: 'Just now', level: 'warn', message: `Reverting traffic to release ${target.id}...` },
-          { timestamp: 'Just now', level: 'success', message: 'Instant rollback completed successfully.' },
+          {
+            timestamp: 'Just now',
+            level: 'warn',
+            message: `Reverting traffic to release ${target.id}...`,
+          },
+          {
+            timestamp: 'Just now',
+            level: 'success',
+            message: 'Instant rollback completed successfully.',
+          },
         ],
       };
       fallbackDeployments.unshift(rollbackDep);
@@ -711,7 +942,7 @@ export const api = {
   async logout(): Promise<void> {
     try {
       const response = await http.post('/auth/logout');
-      console.log(response)
+      console.log(response);
     } catch {
       // Ignore
     }
@@ -722,4 +953,3 @@ export const api = {
     return `${backendUrl}/auth/oauth/google`;
   },
 };
-

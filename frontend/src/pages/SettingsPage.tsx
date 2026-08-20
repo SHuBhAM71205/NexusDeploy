@@ -116,7 +116,9 @@ export function SettingsPage() {
         <div>
           <div className="flex items-center gap-2">
             <Settings className="size-5 text-indigo-600 dark:text-indigo-400" />
-            <h1 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-white">Workspace Settings</h1>
+            <h1 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-white">
+              Workspace Settings
+            </h1>
           </div>
           <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
             Configure workspace boundaries, build concurrency, edge caches, and deployment API keys.
@@ -136,12 +138,18 @@ export function SettingsPage() {
         <div className="space-y-6">
           {/* General Workspace Info */}
           <Card variant="glass" className="p-6">
-            <h2 className="text-base font-bold text-slate-900 dark:text-white mb-1">General Settings</h2>
-            <p className="text-xs text-slate-500 dark:text-slate-400 mb-6">Basic metadata and identifiers for your organization.</p>
+            <h2 className="text-base font-bold text-slate-900 dark:text-white mb-1">
+              General Settings
+            </h2>
+            <p className="text-xs text-slate-500 dark:text-slate-400 mb-6">
+              Basic metadata and identifiers for your organization.
+            </p>
 
             <form onSubmit={handleSave} className="space-y-4">
               <div>
-                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300">Workspace Display Name</label>
+                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300">
+                  Workspace Display Name
+                </label>
                 <input
                   type="text"
                   value={name}
@@ -152,7 +160,9 @@ export function SettingsPage() {
 
               <div className="grid gap-4 sm:grid-cols-2">
                 <div>
-                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300">Build Concurrency Limit</label>
+                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300">
+                    Build Concurrency Limit
+                  </label>
                   <input
                     type="number"
                     min="1"
@@ -161,11 +171,15 @@ export function SettingsPage() {
                     onChange={(e) => setConcurrency(parseInt(e.target.value, 10) || 1)}
                     className="mt-1 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs text-slate-900 shadow-sm focus:border-indigo-500 focus:outline-none dark:border-slate-700 dark:bg-slate-950 dark:text-white"
                   />
-                  <p className="mt-1 text-[10px] text-slate-500 dark:text-slate-400">Max parallel pipeline builds.</p>
+                  <p className="mt-1 text-[10px] text-slate-500 dark:text-slate-400">
+                    Max parallel pipeline builds.
+                  </p>
                 </div>
 
                 <div>
-                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300">Log Retention (Days)</label>
+                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300">
+                    Log Retention (Days)
+                  </label>
                   <input
                     type="number"
                     min="7"
@@ -174,7 +188,9 @@ export function SettingsPage() {
                     onChange={(e) => setRetentionDays(parseInt(e.target.value, 10) || 7)}
                     className="mt-1 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs text-slate-900 shadow-sm focus:border-indigo-500 focus:outline-none dark:border-slate-700 dark:bg-slate-950 dark:text-white"
                   />
-                  <p className="mt-1 text-[10px] text-slate-500 dark:text-slate-400">Build & runtime logs lifetime.</p>
+                  <p className="mt-1 text-[10px] text-slate-500 dark:text-slate-400">
+                    Build & runtime logs lifetime.
+                  </p>
                 </div>
               </div>
 
@@ -193,8 +209,12 @@ export function SettingsPage() {
           <Card variant="glass" className="p-6">
             <div className="flex items-center justify-between mb-4">
               <div>
-                <h2 className="text-base font-bold text-slate-900 dark:text-white">CI/CD API Keys</h2>
-                <p className="text-xs text-slate-500 dark:text-slate-400">Tokens for authenticating GitHub Actions, GitLab CI, or CLI deployments.</p>
+                <h2 className="text-base font-bold text-slate-900 dark:text-white">
+                  CI/CD API Keys
+                </h2>
+                <p className="text-xs text-slate-500 dark:text-slate-400">
+                  Tokens for authenticating GitHub Actions, GitLab CI, or CLI deployments.
+                </p>
               </div>
             </div>
 
@@ -208,9 +228,13 @@ export function SettingsPage() {
                   <div className="space-y-0.5">
                     <div className="flex items-center gap-2">
                       <Key size={14} className="text-indigo-600 dark:text-indigo-400" />
-                      <span className="text-xs font-semibold text-slate-900 dark:text-white">{key.name}</span>
+                      <span className="text-xs font-semibold text-slate-900 dark:text-white">
+                        {key.name}
+                      </span>
                     </div>
-                    <p className="font-mono text-[11px] text-slate-500 dark:text-slate-400">{key.masked_key}</p>
+                    <p className="font-mono text-[11px] text-slate-500 dark:text-slate-400">
+                      {key.masked_key}
+                    </p>
                   </div>
 
                   <div className="flex items-center gap-2">
@@ -223,7 +247,11 @@ export function SettingsPage() {
                       className="rounded-lg border border-slate-200 bg-white p-1.5 text-slate-500 hover:text-slate-900 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-400 dark:hover:text-white"
                       title="Copy Key"
                     >
-                      {copiedKey === key.id ? <Check size={13} className="text-emerald-500" /> : <Copy size={13} />}
+                      {copiedKey === key.id ? (
+                        <Check size={13} className="text-emerald-500" />
+                      ) : (
+                        <Copy size={13} />
+                      )}
                     </button>
                     <button
                       type="button"
@@ -263,13 +291,19 @@ export function SettingsPage() {
           {/* Subscription Tier */}
           <Card variant="glass" className="p-5">
             <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
-              <span className="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">Plan Tier</span>
+              <span className="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                Plan Tier
+              </span>
               <span className="rounded-full bg-gradient-to-r from-indigo-500 to-purple-500 px-2.5 py-0.5 text-[10px] font-bold text-white uppercase shadow-xs">
                 {settings?.plan || 'Enterprise'}
               </span>
             </div>
-            <p className="mt-3 text-lg font-bold text-slate-900 dark:text-white">Global Edge Scale</p>
-            <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">Unlimited rollbacks, preview environments, and instant edge caching.</p>
+            <p className="mt-3 text-lg font-bold text-slate-900 dark:text-white">
+              Global Edge Scale
+            </p>
+            <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+              Unlimited rollbacks, preview environments, and instant edge caching.
+            </p>
             <div className="mt-4 rounded-xl bg-slate-50 dark:bg-slate-950/60 p-3 border border-slate-100 dark:border-slate-800/80 text-xs space-y-1 font-mono">
               <div className="flex justify-between text-slate-600 dark:text-slate-400">
                 <span>Bandwidth:</span>
@@ -277,7 +311,9 @@ export function SettingsPage() {
               </div>
               <div className="flex justify-between text-slate-600 dark:text-slate-400">
                 <span>Edge Nodes:</span>
-                <span className="text-emerald-600 dark:text-emerald-400 font-medium">320+ PoPs</span>
+                <span className="text-emerald-600 dark:text-emerald-400 font-medium">
+                  320+ PoPs
+                </span>
               </div>
             </div>
           </Card>

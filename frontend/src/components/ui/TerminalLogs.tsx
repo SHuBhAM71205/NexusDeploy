@@ -14,20 +14,45 @@ export function TerminalLogs({ deployment, onRollback }: TerminalLogsProps) {
   const [activeTab, setActiveTab] = useState<'logs' | 'overview'>('logs');
 
   const logs: LogLine[] = deployment.logs || [
-    { timestamp: '14:40:02', level: 'info', message: `Initializing deployment ${deployment.id}...` },
-    { timestamp: '14:40:05', level: 'info', message: `Git ref ${deployment.branch} (${deployment.commit_hash}) - "${deployment.commit_message}"` },
+    {
+      timestamp: '14:40:02',
+      level: 'info',
+      message: `Initializing deployment ${deployment.id}...`,
+    },
+    {
+      timestamp: '14:40:05',
+      level: 'info',
+      message: `Git ref ${deployment.branch} (${deployment.commit_hash}) - "${deployment.commit_message}"`,
+    },
     { timestamp: '14:40:12', level: 'info', message: 'Restoring cache for build dependencies...' },
-    { timestamp: '14:40:20', level: 'info', message: 'Executing compilation and production bundling pipeline...' },
-    { timestamp: '14:40:45', level: 'info', message: 'Building lightweight container and validating TLS certs...' },
-    { timestamp: '14:41:00', level: 'success', message: `Deployment live at ${deployment.url || 'https://app.nexusdeploy.app'}` },
+    {
+      timestamp: '14:40:20',
+      level: 'info',
+      message: 'Executing compilation and production bundling pipeline...',
+    },
+    {
+      timestamp: '14:40:45',
+      level: 'info',
+      message: 'Building lightweight container and validating TLS certs...',
+    },
+    {
+      timestamp: '14:41:00',
+      level: 'success',
+      message: `Deployment live at ${deployment.url || 'https://app.nexusdeploy.app'}`,
+    },
   ];
 
   const filteredLogs = logs.filter(
-    (l) => !search || l.message.toLowerCase().includes(search.toLowerCase()) || l.timestamp.includes(search),
+    (l) =>
+      !search ||
+      l.message.toLowerCase().includes(search.toLowerCase()) ||
+      l.timestamp.includes(search),
   );
 
   const handleCopy = () => {
-    const text = logs.map((l) => `[${l.timestamp}] [${l.level.toUpperCase()}] ${l.message}`).join('\n');
+    const text = logs
+      .map((l) => `[${l.timestamp}] [${l.level.toUpperCase()}] ${l.message}`)
+      .join('\n');
     navigator.clipboard.writeText(text);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
@@ -56,12 +81,18 @@ export function TerminalLogs({ deployment, onRollback }: TerminalLogsProps) {
           </div>
           <div>
             <div className="flex items-center gap-2">
-              <span className="font-mono text-sm font-semibold text-slate-900 dark:text-white">{deployment.id}</span>
+              <span className="font-mono text-sm font-semibold text-slate-900 dark:text-white">
+                {deployment.id}
+              </span>
               <StatusBadge status={deployment.status} />
               <EnvironmentBadge env={deployment.environment} />
             </div>
             <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400 font-mono">
-              commit <span className="text-indigo-600 dark:text-indigo-400 font-medium">{deployment.commit_hash}</span> • {deployment.commit_message}
+              commit{' '}
+              <span className="text-indigo-600 dark:text-indigo-400 font-medium">
+                {deployment.commit_hash}
+              </span>{' '}
+              • {deployment.commit_message}
             </p>
           </div>
         </div>
@@ -119,7 +150,10 @@ export function TerminalLogs({ deployment, onRollback }: TerminalLogsProps) {
         {activeTab === 'logs' && (
           <div className="flex items-center gap-2">
             <div className="relative">
-              <Search size={14} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400" />
+              <Search
+                size={14}
+                className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400"
+              />
               <input
                 type="text"
                 placeholder="Filter logs..."
@@ -146,16 +180,27 @@ export function TerminalLogs({ deployment, onRollback }: TerminalLogsProps) {
           <div className="terminal-scanline" />
           <div className="space-y-1.5">
             {filteredLogs.length === 0 ? (
-              <p className="text-slate-500 italic py-4 text-center">No log lines matching "{search}"</p>
+              <p className="text-slate-500 italic py-4 text-center">
+                No log lines matching "{search}"
+              </p>
             ) : (
               filteredLogs.map((line, idx) => (
-                <div key={idx} className="flex items-start gap-3 leading-relaxed hover:bg-slate-900/60 px-1 py-0.5 rounded">
+                <div
+                  key={idx}
+                  className="flex items-start gap-3 leading-relaxed hover:bg-slate-900/60 px-1 py-0.5 rounded"
+                >
                   <span className="text-slate-500 select-none">{line.timestamp}</span>
-                  <span className={`uppercase font-semibold select-none text-[10px] px-1.5 py-0.2 rounded ${
-                    line.level === 'success' ? 'bg-emerald-500/20 text-emerald-300' :
-                    line.level === 'warn' ? 'bg-amber-500/20 text-amber-300' :
-                    line.level === 'error' ? 'bg-rose-500/20 text-rose-300' : 'bg-slate-800 text-slate-400'
-                  }`}>
+                  <span
+                    className={`uppercase font-semibold select-none text-[10px] px-1.5 py-0.2 rounded ${
+                      line.level === 'success'
+                        ? 'bg-emerald-500/20 text-emerald-300'
+                        : line.level === 'warn'
+                          ? 'bg-amber-500/20 text-amber-300'
+                          : line.level === 'error'
+                            ? 'bg-rose-500/20 text-rose-300'
+                            : 'bg-slate-800 text-slate-400'
+                    }`}
+                  >
                     {line.level}
                   </span>
                   <span className={getLevelColor(line.level)}>{line.message}</span>
@@ -171,24 +216,36 @@ export function TerminalLogs({ deployment, onRollback }: TerminalLogsProps) {
               <Cpu size={16} className="text-indigo-600 dark:text-indigo-400" />
               <span className="text-xs font-semibold">Compute Allocation</span>
             </div>
-            <p className="mt-2 text-lg font-bold text-slate-900 dark:text-white">0.5 vCPU / 512 MB</p>
-            <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-1">Edge Serverless Pod</p>
+            <p className="mt-2 text-lg font-bold text-slate-900 dark:text-white">
+              0.5 vCPU / 512 MB
+            </p>
+            <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-1">
+              Edge Serverless Pod
+            </p>
           </div>
           <div className="rounded-xl border border-slate-200 bg-slate-50 p-4 dark:border-slate-800 dark:bg-slate-950/60">
             <div className="flex items-center gap-2 text-slate-500 dark:text-slate-400">
               <HardDrive size={16} className="text-emerald-600 dark:text-emerald-400" />
               <span className="text-xs font-semibold">Bundle Size</span>
             </div>
-            <p className="mt-2 text-lg font-bold text-slate-900 dark:text-white">4.82 MB (Gzip: 1.2 MB)</p>
-            <p className="text-[11px] text-emerald-600 dark:text-emerald-400 mt-1 font-medium">✓ Optimized tree-shaking</p>
+            <p className="mt-2 text-lg font-bold text-slate-900 dark:text-white">
+              4.82 MB (Gzip: 1.2 MB)
+            </p>
+            <p className="text-[11px] text-emerald-600 dark:text-emerald-400 mt-1 font-medium">
+              ✓ Optimized tree-shaking
+            </p>
           </div>
           <div className="rounded-xl border border-slate-200 bg-slate-50 p-4 dark:border-slate-800 dark:bg-slate-950/60">
             <div className="flex items-center gap-2 text-slate-500 dark:text-slate-400">
               <ShieldCheck size={16} className="text-sky-600 dark:text-sky-400" />
               <span className="text-xs font-semibold">Security Scan</span>
             </div>
-            <p className="mt-2 text-lg font-bold text-slate-900 dark:text-white">0 Vulnerabilities</p>
-            <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-1">Scanned 142 packages</p>
+            <p className="mt-2 text-lg font-bold text-slate-900 dark:text-white">
+              0 Vulnerabilities
+            </p>
+            <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-1">
+              Scanned 142 packages
+            </p>
           </div>
         </div>
       )}

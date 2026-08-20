@@ -2,18 +2,18 @@ import { useState, useEffect } from 'react';
 import { Modal } from './Modal';
 import { FolderPickerModal } from './FolderPickerModal';
 import { TokenPromptModal } from './TokenPromptModal';
-import { 
-  Terminal, 
-  FolderOpen, 
-  Lock, 
-  Key, 
-  ShieldCheck, 
-  ArrowRight, 
-  ExternalLink, 
-  CheckCircle2, 
+import {
+  Terminal,
+  FolderOpen,
+  Lock,
+  Key,
+  ShieldCheck,
+  ArrowRight,
+  ExternalLink,
+  CheckCircle2,
   XCircle,
   Github,
-  HardDrive
+  HardDrive,
 } from 'lucide-react';
 import { agentApi } from '../../services/agentApi';
 import type { Project, Framework, EnvVar } from '../../types';
@@ -38,11 +38,26 @@ const frameworkPresets: Record<
   'React / Vite': { build: 'npm run build', output: 'dist', install: 'npm install', node: '20.x' },
   'Next.js': { build: 'npm run build', output: '.next', install: 'npm install', node: '20.x' },
   'Node.js / Express': { build: 'npm run build', output: 'dist', install: 'npm ci', node: '20.x' },
-  'FastAPI / Python': { build: 'pip install -r requirements.txt', output: './', install: 'pip install -r requirements.txt', node: 'Python 3.12' },
+  'FastAPI / Python': {
+    build: 'pip install -r requirements.txt',
+    output: './',
+    install: 'pip install -r requirements.txt',
+    node: 'Python 3.12',
+  },
   Go: { build: 'go build -o server .', output: './', install: 'go mod download', node: 'Go 1.22' },
-  Rust: { build: 'cargo build --release', output: 'target/release', install: 'cargo check', node: 'Rust 1.78' },
+  Rust: {
+    build: 'cargo build --release',
+    output: 'target/release',
+    install: 'cargo check',
+    node: 'Rust 1.78',
+  },
   Vue: { build: 'npm run build', output: 'dist', install: 'npm install', node: '20.x' },
-  'Static HTML': { build: 'echo "No build required"', output: './', install: 'echo "No install required"', node: 'None' },
+  'Static HTML': {
+    build: 'echo "No build required"',
+    output: './',
+    install: 'echo "No install required"',
+    node: 'None',
+  },
 };
 
 export function NewProjectModal({ isOpen, onClose, onSubmit }: NewProjectModalProps) {
@@ -75,8 +90,12 @@ export function NewProjectModal({ isOpen, onClose, onSubmit }: NewProjectModalPr
   const [tokens, setTokens] = useState<Record<string, string>>({});
 
   // Deploy execution states
-  const [deployStatus, setDeployStatus] = useState<'idle' | 'running' | 'success' | 'failed'>('idle');
-  const [deployLogs, setDeployLogs] = useState<Array<{ time: string; type: string; msg: string }>>([]);
+  const [deployStatus, setDeployStatus] = useState<'idle' | 'running' | 'success' | 'failed'>(
+    'idle',
+  );
+  const [deployLogs, setDeployLogs] = useState<Array<{ time: string; type: string; msg: string }>>(
+    [],
+  );
   const [deployedUrl, setDeployedUrl] = useState<string | null>(null);
   const [deployError, setDeployError] = useState<string | null>(null);
 
@@ -87,35 +106,44 @@ export function NewProjectModal({ isOpen, onClose, onSubmit }: NewProjectModalPr
       setDeployLogs([]);
       setDeployedUrl(null);
       setDeployError(null);
-      
-      agentApi.browse().then((res) => {
-        if (res?.currentPath) {
-          setRootDirectory(res.currentPath);
-          const folderName = res.currentPath.split(/[/\\]/).pop() || 'my-app';
-          setName(folderName);
-        }
-      }).catch(() => {});
+
+      agentApi
+        .browse()
+        .then((res) => {
+          if (res?.currentPath) {
+            setRootDirectory(res.currentPath);
+            const folderName = res.currentPath.split(/[/\\]/).pop() || 'my-app';
+            setName(folderName);
+          }
+        })
+        .catch(() => {});
     }
   }, [isOpen]);
 
   useEffect(() => {
     if (rootDirectory && rootDirectory.length > 2) {
-      agentApi.analyze(rootDirectory).then((res) => {
-        if (res?.framework) {
-          if (res.framework === 'react') {
-            handleFrameworkChange('React / Vite');
-            setPlatform('vercel');
-          } else if (res.framework === 'node') {
-            handleFrameworkChange('Node.js / Express');
-            setPlatform('render');
+      agentApi
+        .analyze(rootDirectory)
+        .then((res) => {
+          if (res?.framework) {
+            if (res.framework === 'react') {
+              handleFrameworkChange('React / Vite');
+              setPlatform('vercel');
+            } else if (res.framework === 'node') {
+              handleFrameworkChange('Node.js / Express');
+              setPlatform('render');
+            }
           }
-        }
-      }).catch(() => {});
+        })
+        .catch(() => {});
 
-      agentApi.getGitStatus(rootDirectory).then((git) => {
-        if (git?.branch) setGitBranch(git.branch);
-        if (git?.remoteUrl) setRepoUrl(git.remoteUrl);
-      }).catch(() => {});
+      agentApi
+        .getGitStatus(rootDirectory)
+        .then((git) => {
+          if (git?.branch) setGitBranch(git.branch);
+          if (git?.remoteUrl) setRepoUrl(git.remoteUrl);
+        })
+        .catch(() => {});
     }
   }, [rootDirectory]);
 
@@ -175,7 +203,11 @@ export function NewProjectModal({ isOpen, onClose, onSubmit }: NewProjectModalPr
         const liveUrl = match ? match[1] : `https://${name.toLowerCase()}.nexusdeploy.app`;
         setDeployedUrl(liveUrl);
         setDeployStatus('success');
-      } else if (log.msg.includes('failed') || log.msg.includes('aborted') || log.msg.includes('Error!')) {
+      } else if (
+        log.msg.includes('failed') ||
+        log.msg.includes('aborted') ||
+        log.msg.includes('Error!')
+      ) {
         setDeployStatus('failed');
         setDeployError(log.msg);
       }
@@ -188,7 +220,9 @@ export function NewProjectModal({ isOpen, onClose, onSubmit }: NewProjectModalPr
         repository: sourceType,
         repoUrl: repoUrl || undefined,
         repoName: name || 'nexus-app',
-        envVars: envVars.filter((ev) => ev.key.trim().length > 0).map((ev) => ({ key: ev.key.trim(), value: ev.value })),
+        envVars: envVars
+          .filter((ev) => ev.key.trim().length > 0)
+          .map((ev) => ({ key: ev.key.trim(), value: ev.value })),
       });
 
       onSubmit({
@@ -233,8 +267,8 @@ export function NewProjectModal({ isOpen, onClose, onSubmit }: NewProjectModalPr
                   step === st.num
                     ? 'border-indigo-600 text-indigo-600 dark:border-indigo-400 dark:text-indigo-300 font-bold'
                     : step > st.num
-                    ? 'border-emerald-500 text-emerald-600 dark:border-emerald-400 dark:text-emerald-300 font-medium'
-                    : 'border-transparent text-slate-400 dark:text-slate-600'
+                      ? 'border-emerald-500 text-emerald-600 dark:border-emerald-400 dark:text-emerald-300 font-medium'
+                      : 'border-transparent text-slate-400 dark:text-slate-600'
                 }`}
               >
                 {st.label}
@@ -248,7 +282,9 @@ export function NewProjectModal({ isOpen, onClose, onSubmit }: NewProjectModalPr
               {/* Project Name & Description */}
               <div className="grid gap-3 sm:grid-cols-2">
                 <div>
-                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300">Application Name *</label>
+                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300">
+                    Application Name *
+                  </label>
                   <input
                     type="text"
                     required
@@ -259,7 +295,9 @@ export function NewProjectModal({ isOpen, onClose, onSubmit }: NewProjectModalPr
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300">Description</label>
+                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300">
+                    Description
+                  </label>
                   <input
                     type="text"
                     placeholder="e.g. Core customer API endpoint"
@@ -288,7 +326,9 @@ export function NewProjectModal({ isOpen, onClose, onSubmit }: NewProjectModalPr
                     <HardDrive size={18} className="text-indigo-600 dark:text-indigo-400" />
                     <div>
                       <div>Local Host Directory</div>
-                      <div className="text-[10px] font-normal text-slate-500 dark:text-slate-400">Folder on this machine</div>
+                      <div className="text-[10px] font-normal text-slate-500 dark:text-slate-400">
+                        Folder on this machine
+                      </div>
                     </div>
                   </button>
 
@@ -304,7 +344,9 @@ export function NewProjectModal({ isOpen, onClose, onSubmit }: NewProjectModalPr
                     <Github size={18} className="text-slate-900 dark:text-white" />
                     <div>
                       <div>GitHub Repository</div>
-                      <div className="text-[10px] font-normal text-slate-500 dark:text-slate-400">Remote git repo URL</div>
+                      <div className="text-[10px] font-normal text-slate-500 dark:text-slate-400">
+                        Remote git repo URL
+                      </div>
                     </div>
                   </button>
                 </div>
@@ -313,7 +355,9 @@ export function NewProjectModal({ isOpen, onClose, onSubmit }: NewProjectModalPr
               {/* Path / Repo Input depending on Source Type */}
               {sourceType === 'local' ? (
                 <div>
-                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300">Local Folder Directory Path *</label>
+                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300">
+                    Local Folder Directory Path *
+                  </label>
                   <div className="mt-1 flex gap-2">
                     <input
                       type="text"
@@ -328,14 +372,17 @@ export function NewProjectModal({ isOpen, onClose, onSubmit }: NewProjectModalPr
                       onClick={() => setIsFolderPickerOpen(true)}
                       className="flex items-center gap-1.5 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-100 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-200"
                     >
-                      <FolderOpen size={14} className="text-indigo-600 dark:text-indigo-400" /> Browse Path
+                      <FolderOpen size={14} className="text-indigo-600 dark:text-indigo-400" />{' '}
+                      Browse Path
                     </button>
                   </div>
                 </div>
               ) : (
                 <div className="grid gap-3 sm:grid-cols-2">
                   <div>
-                    <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300">GitHub Repository URL *</label>
+                    <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300">
+                      GitHub Repository URL *
+                    </label>
                     <input
                       type="text"
                       required
@@ -346,7 +393,9 @@ export function NewProjectModal({ isOpen, onClose, onSubmit }: NewProjectModalPr
                     />
                   </div>
                   <div>
-                    <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300">Git Branch</label>
+                    <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300">
+                      Git Branch
+                    </label>
                     <input
                       type="text"
                       value={gitBranch}
@@ -359,7 +408,9 @@ export function NewProjectModal({ isOpen, onClose, onSubmit }: NewProjectModalPr
 
               {/* Target Cloud Platform */}
               <div>
-                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Target Cloud Platform *</label>
+                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                  Target Cloud Platform *
+                </label>
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                   {cloudPlatforms.map((p) => (
                     <button
@@ -393,7 +444,11 @@ export function NewProjectModal({ isOpen, onClose, onSubmit }: NewProjectModalPr
                 </button>
                 <button
                   type="button"
-                  disabled={!name.trim() || (sourceType === 'local' && !rootDirectory.trim()) || (sourceType === 'github' && !repoUrl.trim())}
+                  disabled={
+                    !name.trim() ||
+                    (sourceType === 'local' && !rootDirectory.trim()) ||
+                    (sourceType === 'github' && !repoUrl.trim())
+                  }
                   onClick={() => setStep(2)}
                   className="flex items-center gap-1.5 rounded-xl bg-indigo-600 px-4 py-2 text-xs font-semibold text-white shadow-sm hover:bg-indigo-500 disabled:opacity-50"
                 >
@@ -408,13 +463,17 @@ export function NewProjectModal({ isOpen, onClose, onSubmit }: NewProjectModalPr
             <div className="space-y-4">
               <div className="rounded-xl border border-indigo-100 bg-indigo-50/50 p-3.5 dark:border-indigo-500/20 dark:bg-indigo-950/40">
                 <div className="flex items-start gap-2.5">
-                  <Lock size={18} className="text-indigo-600 dark:text-indigo-400 mt-0.5 shrink-0" />
+                  <Lock
+                    size={18}
+                    className="text-indigo-600 dark:text-indigo-400 mt-0.5 shrink-0"
+                  />
                   <div className="text-xs text-slate-600 dark:text-slate-300 space-y-1">
                     <p className="font-semibold text-slate-900 dark:text-white">
                       Platform API Credentials Check
                     </p>
                     <p>
-                      Nexus requires an API token to deploy to {platform.toUpperCase()}. Please enter your token below to authenticate.
+                      Nexus requires an API token to deploy to {platform.toUpperCase()}. Please
+                      enter your token below to authenticate.
                     </p>
                   </div>
                 </div>
@@ -423,14 +482,22 @@ export function NewProjectModal({ isOpen, onClose, onSubmit }: NewProjectModalPr
               {/* Provider Token Card */}
               {['github', platform].map((provKey) => {
                 const isSaved = vaultStatus[provKey];
-                const provName = provKey === 'github' ? 'GitHub (VCS)' : cloudPlatforms.find((p) => p.id === provKey)?.name || provKey.toUpperCase();
+                const provName =
+                  provKey === 'github'
+                    ? 'GitHub (VCS)'
+                    : cloudPlatforms.find((p) => p.id === provKey)?.name || provKey.toUpperCase();
 
                 return (
-                  <div key={provKey} className="rounded-xl border border-slate-200 bg-white p-3.5 space-y-3 dark:border-slate-800 dark:bg-slate-900">
+                  <div
+                    key={provKey}
+                    className="rounded-xl border border-slate-200 bg-white p-3.5 space-y-3 dark:border-slate-800 dark:bg-slate-900"
+                  >
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2">
                         <Key size={16} className="text-indigo-500" />
-                        <span className="text-xs font-bold text-slate-900 dark:text-white">{provName} API Token</span>
+                        <span className="text-xs font-bold text-slate-900 dark:text-white">
+                          {provName} API Token
+                        </span>
                       </div>
                       {isSaved ? (
                         <span className="flex items-center gap-1 rounded-full bg-emerald-50 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-400 px-2.5 py-0.5 text-[10px] font-semibold">
@@ -448,7 +515,9 @@ export function NewProjectModal({ isOpen, onClose, onSubmit }: NewProjectModalPr
                         type="password"
                         placeholder={`Paste your ${provName} API Token here...`}
                         value={tokens[provKey] || ''}
-                        onChange={(e) => setTokens((prev) => ({ ...prev, [provKey]: e.target.value }))}
+                        onChange={(e) =>
+                          setTokens((prev) => ({ ...prev, [provKey]: e.target.value }))
+                        }
                         className="flex-1 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-xs font-mono text-slate-900 focus:border-indigo-500 focus:outline-none dark:border-slate-700 dark:bg-slate-950 dark:text-white"
                       />
                       <div className="flex gap-2">
@@ -542,18 +611,21 @@ export function NewProjectModal({ isOpen, onClose, onSubmit }: NewProjectModalPr
                   {deployStatus === 'running' && (
                     <span className="flex h-2.5 w-2.5 rounded-full bg-indigo-500 animate-ping" />
                   )}
-                  {deployStatus === 'success' && <CheckCircle2 size={18} className="text-emerald-500" />}
+                  {deployStatus === 'success' && (
+                    <CheckCircle2 size={18} className="text-emerald-500" />
+                  )}
                   {deployStatus === 'failed' && <XCircle size={18} className="text-rose-500" />}
                   <div>
                     <div className="text-xs font-bold text-slate-900 dark:text-white">
                       {deployStatus === 'running'
                         ? 'Executing Live Deploy via Host Agent...'
                         : deployStatus === 'success'
-                        ? 'Deployment Completed Successfully!'
-                        : 'Deployment Failed'}
+                          ? 'Deployment Completed Successfully!'
+                          : 'Deployment Failed'}
                     </div>
                     <div className="text-[11px] text-slate-500 dark:text-slate-400">
-                      Target: {platform.toUpperCase()} • {sourceType === 'local' ? rootDirectory : repoUrl}
+                      Target: {platform.toUpperCase()} •{' '}
+                      {sourceType === 'local' ? rootDirectory : repoUrl}
                     </div>
                   </div>
                 </div>
@@ -583,7 +655,9 @@ export function NewProjectModal({ isOpen, onClose, onSubmit }: NewProjectModalPr
                   <Terminal size={12} /> Host Agent stdout / stderr stream
                 </div>
                 {deployLogs.length === 0 ? (
-                  <div className="text-slate-500 italic py-2">Connecting to host deployment agent stdout stream...</div>
+                  <div className="text-slate-500 italic py-2">
+                    Connecting to host deployment agent stdout stream...
+                  </div>
                 ) : (
                   deployLogs.map((lg, idx) => (
                     <div
@@ -592,10 +666,10 @@ export function NewProjectModal({ isOpen, onClose, onSubmit }: NewProjectModalPr
                         lg.type === 'error'
                           ? 'text-rose-400 font-semibold'
                           : lg.type === 'success'
-                          ? 'text-emerald-400 font-bold'
-                          : lg.type === 'warn'
-                          ? 'text-amber-300'
-                          : 'text-slate-300'
+                            ? 'text-emerald-400 font-bold'
+                            : lg.type === 'warn'
+                              ? 'text-amber-300'
+                              : 'text-slate-300'
                       }`}
                     >
                       [{lg.time}] [{lg.type ? lg.type.toUpperCase() : 'INFO'}] {lg.msg}

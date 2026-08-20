@@ -1,13 +1,5 @@
 import { useState, useEffect } from 'react';
-import {
-  Rocket,
-  Search,
-  RotateCcw,
-  Terminal,
-  ExternalLink,
-  Plus,
-  RefreshCw,
-} from 'lucide-react';
+import { Rocket, Search, RotateCcw, Terminal, ExternalLink, Plus, RefreshCw } from 'lucide-react';
 import { Card } from '../components/ui/Card';
 import { StatusBadge, EnvironmentBadge } from '../components/ui/Badge';
 import { DeploymentLogsModal } from '../components/deployments/DeploymentLogsModal';
@@ -77,8 +69,11 @@ export function DeploymentsPage() {
       d.commit_hash.includes(search) ||
       d.author.toLowerCase().includes(search.toLowerCase());
 
-    const matchesEnv = environmentFilter === 'all' || d.environment.toLowerCase() === environmentFilter.toLowerCase();
-    const matchesStatus = statusFilter === 'all' || d.status.toLowerCase() === statusFilter.toLowerCase();
+    const matchesEnv =
+      environmentFilter === 'all' ||
+      d.environment.toLowerCase() === environmentFilter.toLowerCase();
+    const matchesStatus =
+      statusFilter === 'all' || d.status.toLowerCase() === statusFilter.toLowerCase();
 
     return matchesSearch && matchesEnv && matchesStatus;
   });
@@ -90,7 +85,9 @@ export function DeploymentsPage() {
         <div>
           <div className="flex items-center gap-2">
             <Rocket className="size-5 text-indigo-600 dark:text-indigo-400" />
-            <h1 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-white">Deployment Pipeline</h1>
+            <h1 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-white">
+              Deployment Pipeline
+            </h1>
           </div>
           <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
             Real-time tracking of builds, rollouts, commit histories, and edge traffic routing.
@@ -176,7 +173,10 @@ export function DeploymentsPage() {
             <tbody className="divide-y divide-slate-100 dark:divide-slate-800/60">
               {filteredDeployments.length === 0 ? (
                 <tr>
-                  <td colSpan={8} className="py-12 text-center text-slate-400 dark:text-slate-500 italic">
+                  <td
+                    colSpan={8}
+                    className="py-12 text-center text-slate-400 dark:text-slate-500 italic"
+                  >
                     No deployments match the selected filters.
                   </td>
                 </tr>
@@ -187,7 +187,9 @@ export function DeploymentsPage() {
                     className="hover:bg-slate-50/80 dark:hover:bg-slate-800/30 transition cursor-pointer"
                     onClick={() => setSelectedDeployment(dep)}
                   >
-                    <td className="px-6 py-4 font-mono font-semibold text-indigo-600 dark:text-indigo-400">{dep.id}</td>
+                    <td className="px-6 py-4 font-mono font-semibold text-indigo-600 dark:text-indigo-400">
+                      {dep.id}
+                    </td>
                     <td className="px-6 py-4 font-semibold text-slate-900 dark:text-white">
                       <div className="flex items-center gap-2">
                         <span>{dep.project_name}</span>
@@ -209,7 +211,9 @@ export function DeploymentsPage() {
                     </td>
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-1.5 font-mono text-slate-600 dark:text-slate-300">
-                        <span className="font-semibold text-indigo-600 dark:text-indigo-400">{dep.commit_hash}</span>
+                        <span className="font-semibold text-indigo-600 dark:text-indigo-400">
+                          {dep.commit_hash}
+                        </span>
                         <span className="text-slate-300 dark:text-slate-600">•</span>
                         <span className="text-slate-500 dark:text-slate-400">{dep.branch}</span>
                       </div>
@@ -220,13 +224,20 @@ export function DeploymentsPage() {
                     <td className="px-6 py-4 text-slate-600 dark:text-slate-300">{dep.author}</td>
                     <td className="px-6 py-4 text-slate-500 dark:text-slate-400 font-mono">
                       <div>{dep.started_at}</div>
-                      {dep.duration && <div className="text-[10px] text-slate-400 dark:text-slate-500">{dep.duration}</div>}
+                      {dep.duration && (
+                        <div className="text-[10px] text-slate-400 dark:text-slate-500">
+                          {dep.duration}
+                        </div>
+                      )}
                     </td>
                     <td className="px-6 py-4">
                       <StatusBadge status={dep.status} />
                     </td>
                     <td className="px-6 py-4 text-right">
-                      <div className="flex items-center justify-end gap-2" onClick={(e) => e.stopPropagation()}>
+                      <div
+                        className="flex items-center justify-end gap-2"
+                        onClick={(e) => e.stopPropagation()}
+                      >
                         <button
                           type="button"
                           onClick={() => setSelectedDeployment(dep)}

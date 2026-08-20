@@ -76,7 +76,12 @@ export function DashboardPage() {
     }
   };
 
-  const handleTriggerDeploy = async (data: { project_id: string; environment: string; branch: string; commit_message: string }) => {
+  const handleTriggerDeploy = async (data: {
+    project_id: string;
+    environment: string;
+    branch: string;
+    commit_message: string;
+  }) => {
     try {
       await api.triggerDeployment(data);
       loadDashboardData();
@@ -96,21 +101,24 @@ export function DashboardPage() {
       value: stats?.active_projects.value || '12',
       detail: stats?.active_projects.detail || '+2 this month',
       icon: Rocket,
-      accent: 'text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-500/10 border-indigo-200 dark:border-indigo-500/20',
+      accent:
+        'text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-500/10 border-indigo-200 dark:border-indigo-500/20',
     },
     {
       label: stats?.successful_deploys.label || 'Successful deploys',
       value: stats?.successful_deploys.value || '98.6%',
       detail: stats?.successful_deploys.detail || 'Last 30 days',
       icon: CheckCircle2,
-      accent: 'text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-500/10 border-emerald-200 dark:border-emerald-500/20',
+      accent:
+        'text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-500/10 border-emerald-200 dark:border-emerald-500/20',
     },
     {
       label: stats?.avg_build_time.label || 'Average build time',
       value: stats?.avg_build_time.value || '1m 42s',
       detail: stats?.avg_build_time.detail || '14% faster',
       icon: Clock3,
-      accent: 'text-sky-600 dark:text-sky-400 bg-sky-50 dark:bg-sky-500/10 border-sky-200 dark:border-sky-500/20',
+      accent:
+        'text-sky-600 dark:text-sky-400 bg-sky-50 dark:bg-sky-500/10 border-sky-200 dark:border-sky-500/20',
     },
   ];
 
@@ -167,7 +175,9 @@ export function DashboardPage() {
               </span>
             </div>
             <div className="mt-4 flex items-baseline justify-between">
-              <span className="text-3xl font-bold tracking-tight text-slate-900 dark:text-white">{value}</span>
+              <span className="text-3xl font-bold tracking-tight text-slate-900 dark:text-white">
+                {value}
+              </span>
               <span className="flex items-center text-xs font-semibold text-emerald-600 dark:text-emerald-400">
                 <ArrowUpRight size={14} className="mr-0.5" />
                 {detail}
@@ -186,8 +196,12 @@ export function DashboardPage() {
         <Card variant="glass" className="overflow-hidden">
           <div className="flex flex-wrap items-center justify-between gap-4 border-b border-slate-100 p-6 dark:border-slate-800/80">
             <div>
-              <h2 className="text-lg font-bold text-slate-900 dark:text-white">Recent Deployments</h2>
-              <p className="text-xs text-slate-500 dark:text-slate-400">Live build pipelines across all connected microservices</p>
+              <h2 className="text-lg font-bold text-slate-900 dark:text-white">
+                Recent Deployments
+              </h2>
+              <p className="text-xs text-slate-500 dark:text-slate-400">
+                Live build pipelines across all connected microservices
+              </p>
             </div>
 
             {/* Filter Tabs */}
@@ -197,10 +211,11 @@ export function DashboardPage() {
                   key={st}
                   type="button"
                   onClick={() => setFilterStatus(st)}
-                  className={`rounded-lg px-3 py-1 text-xs font-medium capitalize transition ${filterStatus === st
+                  className={`rounded-lg px-3 py-1 text-xs font-medium capitalize transition ${
+                    filterStatus === st
                       ? 'bg-white text-indigo-600 shadow-sm font-semibold dark:bg-indigo-600 dark:text-white'
                       : 'text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white'
-                    }`}
+                  }`}
                 >
                   {st}
                 </button>
@@ -254,7 +269,9 @@ export function DashboardPage() {
                         <span className="rounded bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 font-mono text-[10px] text-indigo-700 dark:text-indigo-300 font-semibold">
                           {dep.commit_hash}
                         </span>
-                        <span className="text-slate-500 dark:text-slate-400 text-[11px]">({dep.branch})</span>
+                        <span className="text-slate-500 dark:text-slate-400 text-[11px]">
+                          ({dep.branch})
+                        </span>
                       </div>
                       <p className="text-[11px] text-slate-500 dark:text-slate-400 truncate max-w-[200px] mt-0.5">
                         {dep.commit_message}
@@ -262,13 +279,20 @@ export function DashboardPage() {
                     </td>
                     <td className="px-6 py-4 text-slate-500 dark:text-slate-400 font-mono">
                       <div>{dep.started_at}</div>
-                      {dep.duration && <div className="text-[10px] text-slate-400 dark:text-slate-500">{dep.duration}</div>}
+                      {dep.duration && (
+                        <div className="text-[10px] text-slate-400 dark:text-slate-500">
+                          {dep.duration}
+                        </div>
+                      )}
                     </td>
                     <td className="px-6 py-4">
                       <StatusBadge status={dep.status} />
                     </td>
                     <td className="px-6 py-4 text-right">
-                      <div className="flex items-center justify-end gap-2" onClick={(e) => e.stopPropagation()}>
+                      <div
+                        className="flex items-center justify-end gap-2"
+                        onClick={(e) => e.stopPropagation()}
+                      >
                         <button
                           type="button"
                           onClick={() => setSelectedDeployment(dep)}
@@ -303,7 +327,9 @@ export function DashboardPage() {
           <Card variant="glass" className="p-5">
             <div className="flex items-center justify-between border-b border-slate-100 pb-3 dark:border-slate-800">
               <h3 className="font-bold text-slate-900 dark:text-white text-sm">Active Services</h3>
-              <span className="text-xs text-indigo-600 dark:text-indigo-400 font-mono font-semibold">{projects.length} Total</span>
+              <span className="text-xs text-indigo-600 dark:text-indigo-400 font-mono font-semibold">
+                {projects.length} Total
+              </span>
             </div>
             <div className="mt-3 space-y-2.5">
               {projects.slice(0, 4).map((p) => (
@@ -313,13 +339,17 @@ export function DashboardPage() {
                 >
                   <div>
                     <p className="text-xs font-semibold text-slate-900 dark:text-white">{p.name}</p>
-                    <p className="text-[10px] text-slate-500 dark:text-slate-400 font-mono">{p.framework}</p>
+                    <p className="text-[10px] text-slate-500 dark:text-slate-400 font-mono">
+                      {p.framework}
+                    </p>
                   </div>
                   <div className="text-right">
                     <span className="inline-flex items-center gap-1 text-[10px] font-medium text-emerald-600 dark:text-emerald-400">
                       <span className="size-1.5 rounded-full bg-emerald-500" /> Live
                     </span>
-                    <p className="text-[10px] text-slate-400 dark:text-slate-500 font-mono">{p.total_deploys} deploys</p>
+                    <p className="text-[10px] text-slate-400 dark:text-slate-500 font-mono">
+                      {p.total_deploys} deploys
+                    </p>
                   </div>
                 </div>
               ))}
@@ -339,9 +369,14 @@ export function DashboardPage() {
                   <div className="flex-1">
                     <p className="font-medium text-slate-800 dark:text-slate-200">{act.action}</p>
                     <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
-                      <span className="text-indigo-600 dark:text-indigo-400 font-mono font-medium">{act.project_name}</span> • {act.user_name}
+                      <span className="text-indigo-600 dark:text-indigo-400 font-mono font-medium">
+                        {act.project_name}
+                      </span>{' '}
+                      • {act.user_name}
                     </p>
-                    <p className="text-[10px] text-slate-400 dark:text-slate-500 mt-0.5">{act.timestamp}</p>
+                    <p className="text-[10px] text-slate-400 dark:text-slate-500 mt-0.5">
+                      {act.timestamp}
+                    </p>
                   </div>
                 </div>
               ))}

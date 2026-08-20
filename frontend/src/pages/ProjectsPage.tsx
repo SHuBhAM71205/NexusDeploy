@@ -23,7 +23,14 @@ import { ProjectSettingsDrawer } from '../components/projects/ProjectSettingsDra
 import { api } from '../services/api';
 import type { Project, EnvVar } from '../types';
 
-const FRAMEWORK_FILTERS = ['All', 'React / Vite', 'Next.js', 'Node.js / Express', 'FastAPI / Python', 'Go'];
+const FRAMEWORK_FILTERS = [
+  'All',
+  'React / Vite',
+  'Next.js',
+  'Node.js / Express',
+  'FastAPI / Python',
+  'Go',
+];
 
 export function ProjectsPage() {
   const [projects, setProjects] = useState<Project[]>([]);
@@ -89,7 +96,10 @@ export function ProjectsPage() {
 
   const handleAddEnv = () => {
     if (!newKey.trim()) return;
-    setEnvVars([...envVars, { key: newKey.trim(), value: newValue.trim(), target: 'all', is_secret: true }]);
+    setEnvVars([
+      ...envVars,
+      { key: newKey.trim(), value: newValue.trim(), target: 'all', is_secret: true },
+    ]);
     setNewKey('');
     setNewValue('');
   };
@@ -104,7 +114,9 @@ export function ProjectsPage() {
       p.name.toLowerCase().includes(search.toLowerCase()) ||
       (p.description && p.description.toLowerCase().includes(search.toLowerCase())) ||
       p.framework.toLowerCase().includes(search.toLowerCase());
-    const matchesFw = selectedFramework === 'All' || p.framework.toLowerCase().includes(selectedFramework.toLowerCase());
+    const matchesFw =
+      selectedFramework === 'All' ||
+      p.framework.toLowerCase().includes(selectedFramework.toLowerCase());
     return matchesSearch && matchesFw;
   });
 
@@ -115,7 +127,9 @@ export function ProjectsPage() {
         <div>
           <div className="flex items-center gap-2">
             <Boxes className="size-5 text-indigo-600 dark:text-indigo-400" />
-            <h1 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-white">Projects & Services</h1>
+            <h1 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-white">
+              Projects & Services
+            </h1>
           </div>
           <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
             Manage your deployed microservices, frontend applications, and API gateways.
@@ -189,8 +203,12 @@ export function ProjectsPage() {
       {filteredProjects.length === 0 ? (
         <Card variant="glass" className="p-12 text-center">
           <Boxes size={36} className="mx-auto text-slate-400 mb-3" />
-          <h3 className="text-base font-semibold text-slate-900 dark:text-white">No projects found</h3>
-          <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">Try adjusting your search or framework filter.</p>
+          <h3 className="text-base font-semibold text-slate-900 dark:text-white">
+            No projects found
+          </h3>
+          <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
+            Try adjusting your search or framework filter.
+          </p>
         </Card>
       ) : viewMode === 'grid' ? (
         <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
@@ -204,8 +222,12 @@ export function ProjectsPage() {
                 {/* Card Top */}
                 <div className="flex items-start justify-between">
                   <div>
-                    <h3 className="text-base font-bold text-slate-900 dark:text-white tracking-tight">{proj.name}</h3>
-                    <p className="text-xs text-indigo-600 dark:text-indigo-400 font-mono mt-0.5 font-medium">{proj.framework}</p>
+                    <h3 className="text-base font-bold text-slate-900 dark:text-white tracking-tight">
+                      {proj.name}
+                    </h3>
+                    <p className="text-xs text-indigo-600 dark:text-indigo-400 font-mono mt-0.5 font-medium">
+                      {proj.framework}
+                    </p>
                   </div>
                   <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-500/25 bg-emerald-50 text-emerald-700 dark:border-emerald-500/20 dark:bg-emerald-500/10 dark:text-emerald-400 px-2.5 py-0.5 text-xs font-medium">
                     <span className="size-1.5 rounded-full bg-emerald-500" /> Active
@@ -214,7 +236,8 @@ export function ProjectsPage() {
 
                 {/* Description */}
                 <p className="mt-3 text-xs text-slate-500 dark:text-slate-400 line-clamp-2 leading-relaxed">
-                  {proj.description || 'Cloud deployed service with automated edge caching and health monitoring.'}
+                  {proj.description ||
+                    'Cloud deployed service with automated edge caching and health monitoring.'}
                 </p>
 
                 {/* Info Pills */}
@@ -223,19 +246,25 @@ export function ProjectsPage() {
                     <span className="flex items-center gap-1.5 text-slate-400 dark:text-slate-500">
                       <GitBranch size={13} /> Branch
                     </span>
-                    <span className="text-slate-700 dark:text-slate-300 font-medium">{proj.branch}</span>
+                    <span className="text-slate-700 dark:text-slate-300 font-medium">
+                      {proj.branch}
+                    </span>
                   </div>
                   <div className="flex items-center justify-between font-mono text-slate-500 dark:text-slate-400">
                     <span className="flex items-center gap-1.5 text-slate-400 dark:text-slate-500">
                       <Clock size={13} /> Last Deployed
                     </span>
-                    <span className="text-slate-700 dark:text-slate-300">{proj.last_deployed_at || 'Recently'}</span>
+                    <span className="text-slate-700 dark:text-slate-300">
+                      {proj.last_deployed_at || 'Recently'}
+                    </span>
                   </div>
                   <div className="flex items-center justify-between font-mono text-slate-500 dark:text-slate-400">
                     <span className="flex items-center gap-1.5 text-slate-400 dark:text-slate-500">
                       <Layers size={13} /> Total Builds
                     </span>
-                    <span className="text-slate-700 dark:text-slate-300 font-medium">{proj.total_deploys}</span>
+                    <span className="text-slate-700 dark:text-slate-300 font-medium">
+                      {proj.total_deploys}
+                    </span>
                   </div>
                 </div>
               </div>
@@ -304,10 +333,15 @@ export function ProjectsPage() {
               </thead>
               <tbody className="divide-y divide-slate-100 dark:divide-slate-800/60">
                 {filteredProjects.map((p) => (
-                  <tr key={p.id} className="hover:bg-slate-50/80 dark:hover:bg-slate-800/40 transition">
+                  <tr
+                    key={p.id}
+                    className="hover:bg-slate-50/80 dark:hover:bg-slate-800/40 transition"
+                  >
                     <td className="px-6 py-4 font-semibold text-slate-900 dark:text-white">
                       <div className="flex items-center gap-2">
-                        <span className="font-mono text-indigo-600 dark:text-indigo-300 font-semibold">{p.name}</span>
+                        <span className="font-mono text-indigo-600 dark:text-indigo-300 font-semibold">
+                          {p.name}
+                        </span>
                         {p.production_url && (
                           <a
                             href={p.production_url}
@@ -319,12 +353,22 @@ export function ProjectsPage() {
                           </a>
                         )}
                       </div>
-                      <p className="text-[11px] text-slate-500 dark:text-slate-400 truncate max-w-sm font-normal">{p.description}</p>
+                      <p className="text-[11px] text-slate-500 dark:text-slate-400 truncate max-w-sm font-normal">
+                        {p.description}
+                      </p>
                     </td>
-                    <td className="px-6 py-4 text-slate-700 dark:text-slate-300 font-mono">{p.framework}</td>
-                    <td className="px-6 py-4 text-slate-500 dark:text-slate-400 font-mono">{p.branch}</td>
-                    <td className="px-6 py-4 text-slate-500 dark:text-slate-400">{p.last_deployed_at || 'Recently'}</td>
-                    <td className="px-6 py-4 text-slate-700 dark:text-slate-300 font-mono font-medium">{p.total_deploys}</td>
+                    <td className="px-6 py-4 text-slate-700 dark:text-slate-300 font-mono">
+                      {p.framework}
+                    </td>
+                    <td className="px-6 py-4 text-slate-500 dark:text-slate-400 font-mono">
+                      {p.branch}
+                    </td>
+                    <td className="px-6 py-4 text-slate-500 dark:text-slate-400">
+                      {p.last_deployed_at || 'Recently'}
+                    </td>
+                    <td className="px-6 py-4 text-slate-700 dark:text-slate-300 font-mono font-medium">
+                      {p.total_deploys}
+                    </td>
                     <td className="px-6 py-4 text-right">
                       <div className="flex items-center justify-end gap-2">
                         <button
@@ -363,17 +407,26 @@ export function ProjectsPage() {
           <div className="space-y-4">
             <div className="max-h-60 overflow-y-auto space-y-2">
               {envVars.length === 0 ? (
-                <p className="text-xs text-slate-400 dark:text-slate-500 italic py-3 text-center">No environment variables set yet.</p>
+                <p className="text-xs text-slate-400 dark:text-slate-500 italic py-3 text-center">
+                  No environment variables set yet.
+                </p>
               ) : (
                 envVars.map((env, idx) => (
-                  <div key={idx} className="flex items-center gap-2 rounded-xl border border-slate-200 bg-slate-50 p-2.5 dark:border-slate-800 dark:bg-slate-950">
-                    <span className="flex-1 font-mono text-xs text-indigo-700 dark:text-indigo-300 font-semibold">{env.key}</span>
+                  <div
+                    key={idx}
+                    className="flex items-center gap-2 rounded-xl border border-slate-200 bg-slate-50 p-2.5 dark:border-slate-800 dark:bg-slate-950"
+                  >
+                    <span className="flex-1 font-mono text-xs text-indigo-700 dark:text-indigo-300 font-semibold">
+                      {env.key}
+                    </span>
                     <span className="flex-1 font-mono text-xs text-slate-600 dark:text-slate-300">
                       {showSecrets[env.key] ? env.value : '••••••••••••••••'}
                     </span>
                     <button
                       type="button"
-                      onClick={() => setShowSecrets({ ...showSecrets, [env.key]: !showSecrets[env.key] })}
+                      onClick={() =>
+                        setShowSecrets({ ...showSecrets, [env.key]: !showSecrets[env.key] })
+                      }
                       className="rounded p-1 text-slate-400 hover:text-slate-700 dark:hover:text-white"
                       title="Toggle Visibility"
                     >

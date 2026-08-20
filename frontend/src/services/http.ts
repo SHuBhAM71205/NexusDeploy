@@ -15,4 +15,3 @@ http.interceptors.response.use(
   (response) => response,
   (error: unknown) => Promise.reject(error),
 );
-

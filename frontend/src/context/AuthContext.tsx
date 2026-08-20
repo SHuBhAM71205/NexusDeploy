@@ -34,7 +34,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setToken(usrToken);
 
       // Clean query parameters from address bar cleanly
-      const cleanUrl = window.location.protocol + '//' + window.location.host + window.location.pathname;
+      const cleanUrl =
+        window.location.protocol + '//' + window.location.host + window.location.pathname;
       window.history.replaceState({ path: cleanUrl }, '', cleanUrl);
 
       if (usrUsername) {

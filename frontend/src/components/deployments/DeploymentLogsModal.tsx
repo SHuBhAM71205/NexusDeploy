@@ -9,15 +9,25 @@ interface DeploymentLogsModalProps {
 
 export function DeploymentLogsModal({ deployment, onClose }: DeploymentLogsModalProps) {
   const [copied, setCopied] = useState(false);
-  const [filterLevel, setFilterLevel] = useState<'all' | 'info' | 'warn' | 'success' | 'error'>('all');
+  const [filterLevel, setFilterLevel] = useState<'all' | 'info' | 'warn' | 'success' | 'error'>(
+    'all',
+  );
 
   if (!deployment) return null;
 
   const logs = deployment.logs || [
-    { timestamp: 'Just now', level: 'info', message: `Cloning repository branch ${deployment.branch}...` },
+    {
+      timestamp: 'Just now',
+      level: 'info',
+      message: `Cloning repository branch ${deployment.branch}...`,
+    },
     { timestamp: 'Just now', level: 'info', message: 'Resolving dependency graph...' },
     { timestamp: 'Just now', level: 'info', message: 'Executing container build pipeline...' },
-    { timestamp: 'Just now', level: 'success', message: `Deployment live at ${deployment.url || 'https://nexusdeploy.app'}` },
+    {
+      timestamp: 'Just now',
+      level: 'success',
+      message: `Deployment live at ${deployment.url || 'https://nexusdeploy.app'}`,
+    },
   ];
 
   const filteredLogs = logs.filter((log) => {
@@ -26,7 +36,9 @@ export function DeploymentLogsModal({ deployment, onClose }: DeploymentLogsModal
   });
 
   const handleCopyLogs = () => {
-    const logText = logs.map((l) => `[${l.timestamp}] [${l.level.toUpperCase()}] ${l.message}`).join('\n');
+    const logText = logs
+      .map((l) => `[${l.timestamp}] [${l.level.toUpperCase()}] ${l.message}`)
+      .join('\n');
     navigator.clipboard.writeText(logText);
     setCopied(true);
     setTimeout(() => setCopied(false), 2500);
@@ -65,7 +77,9 @@ export function DeploymentLogsModal({ deployment, onClose }: DeploymentLogsModal
                 </span>
               </div>
               <p className="text-xs text-slate-400 mt-0.5 flex items-center gap-2">
-                <span>Commit {deployment.commit_hash}: {deployment.commit_message}</span>
+                <span>
+                  Commit {deployment.commit_hash}: {deployment.commit_message}
+                </span>
                 <span>•</span>
                 <span>by {deployment.author}</span>
               </p>
@@ -138,11 +152,18 @@ export function DeploymentLogsModal({ deployment, onClose }: DeploymentLogsModal
           </div>
 
           {filteredLogs.length === 0 ? (
-            <div className="py-8 text-center text-slate-500 italic">No logs match the selected filter.</div>
+            <div className="py-8 text-center text-slate-500 italic">
+              No logs match the selected filter.
+            </div>
           ) : (
             filteredLogs.map((log, i) => (
-              <div key={i} className="flex items-start gap-3 hover:bg-slate-900/60 p-1 rounded transition">
-                <span className="shrink-0 text-slate-600 text-[11px] select-none w-20">{log.timestamp}</span>
+              <div
+                key={i}
+                className="flex items-start gap-3 hover:bg-slate-900/60 p-1 rounded transition"
+              >
+                <span className="shrink-0 text-slate-600 text-[11px] select-none w-20">
+                  {log.timestamp}
+                </span>
                 <span
                   className={`shrink-0 rounded px-1.5 py-0.5 text-[10px] font-semibold border uppercase leading-none ${getLevelColor(
                     log.level,
