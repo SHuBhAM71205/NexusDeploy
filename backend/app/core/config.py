@@ -83,6 +83,10 @@ class Settings(BaseSettings):
     HASHING_ALGO: str
     SECRET_KEY: str = "change-me-in-production"
 
+    # AGENT REPORTING
+    AGENT_SERVICE_TOKEN: str = "change-me-in-production"
+    LOKI_URL: str = "http://localhost:3100"
+
     # OAUTH / AUTH PROVIDERS
     GOOGLE_CLIENT_ID: str = ""
     GOOGLE_CLIENT_SECRET: str = ""

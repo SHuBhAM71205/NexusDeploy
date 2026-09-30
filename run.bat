@@ -35,9 +35,15 @@ IF NOT EXIST "frontend\node_modules\" (
 where docker >nul 2>nul
 IF %ERRORLEVEL% EQU 0 (
     echo [INFO] Attempting to start PostgreSQL database via Docker Compose...
-    docker compose -f backend/docker-compose.yml up -d db >nul 2>nul
+    docker compose --env-file backend/.env -f backend/docker-compose.yml up -d >nul 2>nul
     IF %ERRORLEVEL% EQU 0 (
         echo [SUCCESS] PostgreSQL container is running.
+        IF EXIST "backend\.venv\Scripts\python.exe" (
+            echo [INFO] Running database migrations...
+            CD backend
+            call .venv\Scripts\python.exe -m alembic upgrade head >nul 2>nul
+            CD ..
+        )
     ) ELSE (
         echo [NOTICE] Could not start Docker container. Backend will run with fallback mock storage.
     )

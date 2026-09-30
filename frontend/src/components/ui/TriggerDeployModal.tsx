@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Modal } from './Modal';
 import { Play, GitBranch, MessageSquare, Key, HardDrive, ShieldCheck } from 'lucide-react';
 import type { Project } from '../../types';
@@ -9,7 +9,8 @@ interface TriggerDeployModalProps {
   onClose: () => void;
   projects: Project[];
   selectedProjectId?: string;
-  onSubmit: (data: { project_id: string; environment: string; branch: string; commit_message: string }) => void;
+  onSubmit: (data: { project_id: string; environment: string; branch: string; commit_message: string }) => Promise<{ status: string; jobId: string; message: string }>;
+  onRefresh: () => void;
 }
 
 export function TriggerDeployModal({
@@ -18,6 +19,7 @@ export function TriggerDeployModal({
   projects,
   selectedProjectId,
   onSubmit,
+  onRefresh,
 }: TriggerDeployModalProps) {
   const [projectId, setProjectId] = useState(selectedProjectId || (projects[0]?.id ?? ''));
   const [environment, setEnvironment] = useState('production');
@@ -29,6 +31,32 @@ export function TriggerDeployModal({
   const [tokenInput, setTokenInput] = useState('');
   const [tokenSaved, setTokenSaved] = useState(false);
   const [savingToken, setSavingToken] = useState(false);
+  const [jobId, setJobId] = useState<string | null>(null);
+  const [jobStatus, setJobStatus] = useState<string | null>(null);
+  const [submitError, setSubmitError] = useState<string | null>(null);
+  const refreshRef = useRef(onRefresh);
+
+  useEffect(() => {
+    refreshRef.current = onRefresh;
+  }, [onRefresh]);
+
+  useEffect(() => {
+    if (!jobId || jobStatus === 'success' || jobStatus === 'failed') return;
+
+    const interval = setInterval(async () => {
+      try {
+        const job = await agentApi.getDeploymentStatus(jobId);
+        setJobStatus(job.status);
+        if (job.status === 'success' || job.status === 'failed') {
+          refreshRef.current();
+        }
+      } catch {
+        // Keep polling through transient Agent errors.
+      }
+    }, 2500);
+
+    return () => clearInterval(interval);
+  }, [jobId, jobStatus]);
 
   useEffect(() => {
     if (selectedProj) {
@@ -55,16 +83,31 @@ export function TriggerDeployModal({
     }
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const pid = projectId || (projects[0]?.id ?? '');
-    onSubmit({
-      project_id: pid,
-      environment,
-      branch: branch || 'main',
-      commit_message: commitMessage || 'Manual trigger',
-    });
-    onClose();
+    if (!pid) {
+      setSubmitError('Select a project before triggering a deployment.');
+      return;
+    }
+
+    setSubmitError(null);
+    setJobId(null);
+    setJobStatus(null);
+    try {
+      const job = await onSubmit({
+        project_id: pid,
+        environment,
+        branch: branch || 'main',
+        commit_message: commitMessage || 'Manual trigger',
+      });
+      if (!job.jobId) throw new Error('Agent did not return a deployment job ID.');
+      setJobId(job.jobId);
+      setJobStatus(job.status);
+      refreshRef.current();
+    } catch (error) {
+      setSubmitError(error instanceof Error ? error.message : 'Unable to start deployment.');
+    }
   };
 
   return (
@@ -76,6 +119,17 @@ export function TriggerDeployModal({
       maxWidth="md"
     >
       <form onSubmit={handleSubmit} className="space-y-4">
+        {submitError && (
+          <div role="alert" className="rounded-lg border border-rose-300 bg-rose-50 px-3 py-2 text-xs text-rose-700 dark:border-rose-800 dark:bg-rose-950/40 dark:text-rose-300">
+            {submitError}
+          </div>
+        )}
+        {jobId && jobStatus && (
+          <div role="status" className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-xs text-slate-700 dark:border-slate-800 dark:bg-slate-950/60 dark:text-slate-300">
+            Deployment status: <strong className="capitalize">{jobStatus}</strong>
+            {jobStatus === 'failed' && ' Check the deployment logs for the failure details.'}
+          </div>
+        )}
         {/* Target Project Dropdown */}
         <div>
           <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300">Target Project</label>

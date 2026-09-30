@@ -1,24 +1,63 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { X, Terminal, Copy, Check, Filter, ExternalLink, ShieldCheck } from 'lucide-react';
 import type { Deployment } from '../../types';
+import { api } from '../../services/api';
 
 interface DeploymentLogsModalProps {
   deployment: Deployment | null;
   onClose: () => void;
 }
 
-export function DeploymentLogsModal({ deployment, onClose }: DeploymentLogsModalProps) {
+export function DeploymentLogsModal({ deployment: selectedDeployment, onClose }: DeploymentLogsModalProps) {
   const [copied, setCopied] = useState(false);
   const [filterLevel, setFilterLevel] = useState<'all' | 'info' | 'warn' | 'success' | 'error'>('all');
+  const [details, setDetails] = useState<Deployment | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const [loadError, setLoadError] = useState<string | null>(null);
 
-  if (!deployment) return null;
+  useEffect(() => {
+    if (!selectedDeployment) {
+      setDetails(null);
+      return;
+    }
 
-  const logs = deployment.logs || [
-    { timestamp: 'Just now', level: 'info', message: `Cloning repository branch ${deployment.branch}...` },
-    { timestamp: 'Just now', level: 'info', message: 'Resolving dependency graph...' },
-    { timestamp: 'Just now', level: 'info', message: 'Executing container build pipeline...' },
-    { timestamp: 'Just now', level: 'success', message: `Deployment live at ${deployment.url || 'https://nexusdeploy.app'}` },
-  ];
+    setDetails(selectedDeployment);
+    setLoadError(null);
+    let isActive = true;
+    let interval: ReturnType<typeof setInterval> | undefined;
+
+    const loadDetails = async () => {
+      setIsLoading(true);
+      try {
+        const result = await api.getDeployment(selectedDeployment.id);
+        if (!isActive) return;
+        setDetails(result);
+        setLoadError(null);
+        if (result.status === 'success' || result.status === 'failed') {
+          if (interval) clearInterval(interval);
+        }
+      } catch (error) {
+        if (isActive) setLoadError(error instanceof Error ? error.message : 'Unable to load deployment details.');
+      } finally {
+        if (isActive) setIsLoading(false);
+      }
+    };
+
+    void loadDetails();
+    if (selectedDeployment.status !== 'success' && selectedDeployment.status !== 'failed') {
+      interval = setInterval(() => void loadDetails(), 3000);
+    }
+
+    return () => {
+      isActive = false;
+      if (interval) clearInterval(interval);
+    };
+  }, [selectedDeployment?.id]);
+
+  if (!selectedDeployment) return null;
+  const deployment = details || selectedDeployment;
+
+  const logs = deployment.logs || [];
 
   const filteredLogs = logs.filter((log) => {
     if (filterLevel === 'all') return true;
@@ -48,6 +87,11 @@ export function DeploymentLogsModal({ deployment, onClose }: DeploymentLogsModal
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md animate-in fade-in duration-200">
       <div className="relative w-full max-w-4xl max-h-[90vh] flex flex-col overflow-hidden rounded-3xl border border-slate-800 bg-slate-900 shadow-2xl">
+        {(isLoading || loadError) && (
+          <div role={loadError ? 'alert' : 'status'} className="border-b border-slate-800 px-5 py-2 text-xs text-slate-400">
+            {isLoading ? 'Loading deployment details...' : `Deployment details unavailable: ${loadError}`}
+          </div>
+        )}
         {/* Header */}
         <div className="flex items-center justify-between border-b border-slate-800 p-5 bg-slate-950/60">
           <div className="flex items-center gap-3">
@@ -65,9 +109,12 @@ export function DeploymentLogsModal({ deployment, onClose }: DeploymentLogsModal
                 </span>
               </div>
               <p className="text-xs text-slate-400 mt-0.5 flex items-center gap-2">
-                <span>Commit {deployment.commit_hash}: {deployment.commit_message}</span>
+                <span>
+                  {deployment.commit_hash || 'Commit unavailable'}
+                  {deployment.commit_message ? `: ${deployment.commit_message}` : ''}
+                </span>
                 <span>•</span>
-                <span>by {deployment.author}</span>
+                <span>by {deployment.author || 'Unknown author'}</span>
               </p>
             </div>
           </div>
@@ -134,11 +181,13 @@ export function DeploymentLogsModal({ deployment, onClose }: DeploymentLogsModal
         <div className="flex-1 overflow-y-auto p-5 font-mono text-xs bg-[#090d16] space-y-2 select-text">
           <div className="text-slate-500 mb-3 flex items-center gap-2 text-[11px] pb-2 border-b border-slate-800/80">
             <ShieldCheck size={14} className="text-emerald-400" />
-            <span>NexusDeploy Build Agent Engine v2.4 • Process ID #8841</span>
+            <span>Deployment logs</span>
           </div>
 
           {filteredLogs.length === 0 ? (
-            <div className="py-8 text-center text-slate-500 italic">No logs match the selected filter.</div>
+            <div className="py-8 text-center text-slate-500 italic">
+              {logs.length === 0 ? 'No deployment logs are available.' : 'No logs match the selected filter.'}
+            </div>
           ) : (
             filteredLogs.map((log, i) => (
               <div key={i} className="flex items-start gap-3 hover:bg-slate-900/60 p-1 rounded transition">

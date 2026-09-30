@@ -19,6 +19,8 @@ import type { Deployment, Project } from '../types';
 export function DeploymentsPage() {
   const [deployments, setDeployments] = useState<Deployment[]>([]);
   const [projects, setProjects] = useState<Project[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [search, setSearch] = useState('');
   const [environmentFilter, setEnvironmentFilter] = useState('all');
   const [statusFilter, setStatusFilter] = useState('all');
@@ -27,12 +29,16 @@ export function DeploymentsPage() {
   const [isTriggerOpen, setIsTriggerOpen] = useState(false);
 
   const loadData = async () => {
+    setIsLoading(true);
+    setLoadError(null);
     try {
       const [d, p] = await Promise.all([api.getDeployments(), api.getProjects()]);
       setDeployments(d);
       setProjects(p);
-    } catch {
-      // Safe fallbacks
+    } catch (error) {
+      setLoadError(error instanceof Error ? error.message : 'Unable to load deployments.');
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -50,32 +56,27 @@ export function DeploymentsPage() {
         target_environment: rollbackDeployment.environment,
       });
       loadData();
-    } catch {
-      // Handled
+    } catch (error) {
+      setLoadError(error instanceof Error ? error.message : 'Unable to roll back deployment.');
     }
   };
 
-  const handleTriggerDeploy = async (data: {
+  const handleTriggerDeploy = (data: {
     project_id: string;
     environment: string;
     branch: string;
     commit_message: string;
   }) => {
-    try {
-      await api.triggerDeployment(data);
-      loadData();
-    } catch {
-      // Handled
-    }
+    return api.triggerDeployment(data);
   };
 
   const filteredDeployments = deployments.filter((d) => {
     const matchesSearch =
       !search ||
       d.project_name.toLowerCase().includes(search.toLowerCase()) ||
-      d.commit_message.toLowerCase().includes(search.toLowerCase()) ||
-      d.commit_hash.includes(search) ||
-      d.author.toLowerCase().includes(search.toLowerCase());
+      (d.commit_message || '').toLowerCase().includes(search.toLowerCase()) ||
+      (d.commit_hash || '').includes(search) ||
+      (d.author || '').toLowerCase().includes(search.toLowerCase());
 
     const matchesEnv = environmentFilter === 'all' || d.environment.toLowerCase() === environmentFilter.toLowerCase();
     const matchesStatus = statusFilter === 'all' || d.status.toLowerCase() === statusFilter.toLowerCase();
@@ -140,9 +141,9 @@ export function DeploymentsPage() {
             className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs text-slate-700 shadow-sm focus:border-indigo-500 focus:outline-none dark:border-slate-800 dark:bg-slate-900/80 dark:text-slate-300"
           >
             <option value="all">All Statuses</option>
+            <option value="started">Started</option>
+            <option value="running">Running</option>
             <option value="success">Success</option>
-            <option value="building">Building</option>
-            <option value="rolled back">Rolled Back</option>
             <option value="failed">Failed</option>
           </select>
 
@@ -159,6 +160,12 @@ export function DeploymentsPage() {
 
       {/* Deployments Table Card */}
       <Card variant="glass" className="overflow-hidden">
+        {loadError && (
+          <div role="alert" className="border-b border-rose-200 bg-rose-50 px-6 py-3 text-xs text-rose-700 dark:border-rose-900 dark:bg-rose-950/40 dark:text-rose-300">
+            Deployments could not be loaded: {loadError}
+            <button type="button" onClick={loadData} className="ml-3 underline">Retry</button>
+          </div>
+        )}
         <div className="overflow-x-auto">
           <table className="w-full text-left text-xs">
             <thead className="border-b border-slate-200 bg-slate-50/75 text-[11px] uppercase tracking-wider text-slate-500 dark:border-slate-800 dark:bg-slate-900/40 dark:text-slate-400 font-semibold">
@@ -174,10 +181,14 @@ export function DeploymentsPage() {
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 dark:divide-slate-800/60">
-              {filteredDeployments.length === 0 ? (
+              {isLoading ? (
+                <tr><td colSpan={8} className="py-12 text-center text-slate-400">Loading deployments...</td></tr>
+              ) : loadError ? (
+                <tr><td colSpan={8} className="py-12 text-center text-slate-400">Deployment data is unavailable.</td></tr>
+              ) : filteredDeployments.length === 0 ? (
                 <tr>
                   <td colSpan={8} className="py-12 text-center text-slate-400 dark:text-slate-500 italic">
-                    No deployments match the selected filters.
+                    {deployments.length === 0 ? 'No deployments yet.' : 'No deployments match the selected filters.'}
                   </td>
                 </tr>
               ) : (
@@ -209,17 +220,17 @@ export function DeploymentsPage() {
                     </td>
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-1.5 font-mono text-slate-600 dark:text-slate-300">
-                        <span className="font-semibold text-indigo-600 dark:text-indigo-400">{dep.commit_hash}</span>
+                        <span className="font-semibold text-indigo-600 dark:text-indigo-400">{dep.commit_hash || 'No commit hash'}</span>
                         <span className="text-slate-300 dark:text-slate-600">•</span>
                         <span className="text-slate-500 dark:text-slate-400">{dep.branch}</span>
                       </div>
                       <p className="text-[11px] text-slate-500 dark:text-slate-400 truncate max-w-[200px] mt-0.5 font-normal">
-                        {dep.commit_message}
+                        {dep.commit_message || 'No commit message'}
                       </p>
                     </td>
-                    <td className="px-6 py-4 text-slate-600 dark:text-slate-300">{dep.author}</td>
+                    <td className="px-6 py-4 text-slate-600 dark:text-slate-300">{dep.author || 'Unavailable'}</td>
                     <td className="px-6 py-4 text-slate-500 dark:text-slate-400 font-mono">
-                      <div>{dep.started_at}</div>
+                      <div>{dep.started_at ? new Date(dep.started_at).toLocaleString() : 'Unavailable'}</div>
                       {dep.duration && <div className="text-[10px] text-slate-400 dark:text-slate-500">{dep.duration}</div>}
                     </td>
                     <td className="px-6 py-4">
@@ -235,7 +246,7 @@ export function DeploymentsPage() {
                           <Terminal size={12} />
                           <span>Logs</span>
                         </button>
-                        {dep.status === 'Success' && (
+                        {dep.status === 'success' && (
                           <button
                             type="button"
                             onClick={() => setRollbackDeployment(dep)}
@@ -276,6 +287,7 @@ export function DeploymentsPage() {
         onClose={() => setIsTriggerOpen(false)}
         projects={projects}
         onSubmit={handleTriggerDeploy}
+        onRefresh={loadData}
       />
     </div>
   );

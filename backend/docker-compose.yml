@@ -1,52 +1,125 @@
 services:
-  db:
-    container_name: NEXUS_DEPLOY_POSTGRES
-    image: postgres:17
-    
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: nexus-backend
+    ports:
+      - "8000:8000"
+    volumes:
+      - .:/app
+    environment:
+      - ENV=dev
+      - DATABASE_URL=postgresql://${PG_DB_USER}:${PG_DB_PASSWORD}@postgres:5432/${PG_DB_NAME}
+      - LOKI_URL=${LOKI_URL:-http://host.docker.internal:3100}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+    networks:
+      - backend
+      - monitoring
 
+  postgres:
+    container_name: nexus-postgres
+    image: postgres:16-alpine
+    ports:
+      - "5432:5432"
     environment:
       POSTGRES_DB: ${PG_DB_NAME}
       POSTGRES_USER: ${PG_DB_USER}
       POSTGRES_PASSWORD: ${PG_DB_PASSWORD}
-
-    ports:
-      - "5432:5432"
-
     volumes:
       - postgres_data:/var/lib/postgresql/data
-
     healthcheck:
       test:
         [
           "CMD-SHELL",
-          "pg_ready -U ${PG_DB_USER} -d ${PG_DB_NAME}"
+          "pg_isready -U ${PG_DB_USER} -d ${PG_DB_NAME}"
         ]
       interval: 5s
-      timeout: 3s
+      timeout: 5s
       retries: 5
     networks:
       - backend
-  
-  pg_admin:
-    container_name: NEXUS_DEPLOY_PGADMIN
 
+  pg_admin:
+    container_name: nexus-pgadmin
     image: dpage/pgadmin4
-    
     environment:
       - PGADMIN_DEFAULT_EMAIL=${PGADMIN_EMAIL}
       - PGADMIN_DEFAULT_PASSWORD=${PGADMIN_PASSWORD}
-    
     restart: always
-    
     ports:
       - "5050:80"
-    
     volumes:
       - pg_admin_data:/var/lib/pgadmin
     depends_on:
-      - db
+      - postgres
     networks:
       - backend
+
+  prometheus:
+    image: prom/prometheus:v2.52.0
+    container_name: nexus-prometheus
+    volumes:
+      - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml
+    ports:
+      - "9090:9090"
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/usr/share/prometheus/console_libraries'
+      - '--web.console.templates=/usr/share/prometheus/consoles'
+    networks:
+      - backend
+
+  grafana:
+    image: grafana/grafana:11.0.0
+    container_name: nexus-grafana
+    ports:
+      - "3001:3000"
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+      - GF_USERS_ALLOW_SIGN_UP=false
+      - GF_SECURITY_ALLOW_EMBEDDING=true
+      - GF_AUTH_ANONYMOUS_ENABLED=true
+      - GF_AUTH_ANONYMOUS_ORG_ROLE=Viewer
+      - GF_AUTH_ANONYMOUS_ORG_NAME=Main Org.
+    volumes:
+      - ./monitoring/grafana-datasource.yml:/etc/grafana/provisioning/datasources/datasource.yaml
+      - ./monitoring/grafana-dashboards.yml:/etc/grafana/provisioning/dashboards/dashboards.yaml
+      - ./monitoring/dashboards:/var/lib/grafana/dashboards
+    networks:
+      - backend
+
+  loki:
+    image: grafana/loki:3.0.0
+    container_name: nexus-loki
+    ports:
+      - "3100:3100"
+    volumes:
+      - ./monitoring/loki-config.yml:/etc/loki/local-config.yaml
+    command: -config.file=/etc/loki/local-config.yaml
+    networks:
+      - backend
+
+  promtail:
+    image: grafana/promtail:3.0.0
+    container_name: nexus-promtail
+    volumes:
+      - /var/log:/var/log
+      - ./monitoring/promtail-config.yml:/etc/promtail/config.yml
+      - /var/lib/docker/containers:/var/lib/docker/containers:ro
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    command: -config.file=/etc/promtail/config.yml
+    networks:
+      - backend
+
 volumes:
   postgres_data:
   pg_admin_data:
@@ -54,3 +127,5 @@ volumes:
 networks:
   backend:
     driver: bridge
+  monitoring:
+    external: true

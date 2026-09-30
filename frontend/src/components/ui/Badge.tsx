@@ -1,6 +1,6 @@
 import React from 'react';
 import { cn } from '../../lib/utils';
-import { CheckCircle2, Clock, AlertTriangle, RotateCcw } from 'lucide-react';
+import { CheckCircle2, Clock, AlertTriangle } from 'lucide-react';
 
 export interface BadgeProps extends React.HTMLAttributes<HTMLSpanElement> {
   variant?: 'success' | 'building' | 'failed' | 'queued' | 'rollback' | 'neutral' | 'indigo' | 'emerald' | 'amber';
@@ -21,23 +21,14 @@ export function StatusBadge({ status }: { status: string }) {
     );
   }
 
-  if (s === 'building') {
+  if (s === 'started' || s === 'running') {
     return (
       <span className="inline-flex items-center gap-1.5 rounded-full border border-amber-500/30 bg-amber-50 text-amber-700 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-300 px-2.5 py-0.5 text-xs font-medium">
         <span className="relative flex size-2">
           <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-amber-400 opacity-75" />
           <span className="relative inline-flex size-2 rounded-full bg-amber-500" />
         </span>
-        Building
-      </span>
-    );
-  }
-
-  if (s === 'rolled back' || s === 'rollback') {
-    return (
-      <span className="inline-flex items-center gap-1.5 rounded-full border border-purple-500/25 bg-purple-50 text-purple-700 dark:border-purple-500/20 dark:bg-purple-500/10 dark:text-purple-300 px-2.5 py-0.5 text-xs font-medium">
-        <RotateCcw size={12} className="text-purple-600 dark:text-purple-400" />
-        Rolled Back
+        {s === 'started' ? 'Started' : 'Running'}
       </span>
     );
   }

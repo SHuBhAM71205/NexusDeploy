@@ -1,0 +1,422 @@
+Implement M8.1 — NexusDeploy Monitoring Infrastructure Foundation.
+
+The repository has already been inspected. Do NOT repeat a broad architecture exploration.
+
+IMPORTANT:
+M7 (environment-variable configuration) is NOT part of this task.
+Do not implement M7.
+
+M8.1 ONLY.
+
+==================================================
+CURRENT ARCHITECTURE
+==================================================
+
+NexusDeploy currently consists of:
+
+Frontend
+    ↓
+FastAPI + PostgreSQL
+    ↓
+Node.js local Agent
+    ↓
+External deployment providers:
+Vercel / Netlify / Railway / Render
+
+The Agent does NOT currently create local Docker containers for deployed projects.
+
+Docker is currently used primarily for local NexusDeploy infrastructure.
+
+Therefore M8.1 must NOT attempt to monitor deployed project containers.
+
+==================================================
+MONITORING ARCHITECTURE
+==================================================
+
+For M8.1 implement only this lightweight monitoring foundation:
+
+                    Monitoring Network
+                         │
+        ┌────────────────┼────────────────┐
+        │                │                │
+   Prometheus         Grafana            Loki
+        │                │                │
+        └──── metrics ───┴──── logs ─────┘
+
+Prometheus:
+- monitoring-service metrics only
+
+Grafana:
+- Prometheus datasource
+- Loki datasource
+
+Loki:
+- ready to receive logs
+- compatible with the existing Agent Render log bridge
+
+DO NOT add:
+
+- Promtail
+- Node Exporter
+- cAdvisor
+- OpenTelemetry Collector
+- Kubernetes monitoring
+- additional exporters
+- deployed-project containers
+- fake metrics
+- fake logs
+
+==================================================
+CRITICAL DATABASE SAFETY
+==================================================
+
+The currently running PostgreSQL is:
+
+NEXUS_DEPLOY_POSTGRES
+postgres:17
+network: backend_backend
+
+There is also pgAdmin running.
+
+The checked-in Compose configuration does NOT exactly match this runtime.
+
+Therefore:
+
+DO NOT require starting the complete existing application Compose stack.
+
+DO NOT recreate/restart/replace PostgreSQL.
+
+DO NOT modify the running PostgreSQL container.
+
+DO NOT change port 5432.
+
+DO NOT change pgAdmin.
+
+Monitoring must be independently startable.
+
+Prefer a dedicated monitoring Compose configuration or another isolated mechanism already compatible with the repository.
+
+==================================================
+1. PROMETHEUS
+==================================================
+
+Create/fix the Prometheus configuration.
+
+For M8.1 it should scrape ONLY actual monitoring services that expose Prometheus-compatible metrics.
+
+Do NOT configure:
+
+- FastAPI /health as a metrics endpoint
+- fake application targets
+- external deployment-provider targets
+- nonexistent project containers
+
+FastAPI currently has JSON health but no /metrics endpoint.
+
+Do not add FastAPI instrumentation in M8.1.
+
+Use conservative scrape intervals suitable for local development.
+
+Configure bounded retention.
+
+==================================================
+2. LOKI
+==================================================
+
+Configure Loki for lightweight local development.
+
+Use persistent storage.
+
+Use bounded retention.
+
+Ensure Loki exposes its normal readiness endpoint.
+
+The existing Agent Render log bridge sends logs to:
+
+http://localhost:3100/loki/api/v1/push
+
+Preserve compatibility with this.
+
+Do NOT modify Agent code.
+
+Do NOT add Promtail.
+
+Do NOT redesign log ingestion.
+
+==================================================
+3. GRAFANA
+==================================================
+
+Configure Grafana with:
+
+- Prometheus datasource
+- Loki datasource
+
+Use persistent Grafana storage.
+
+Do NOT create the final dashboard yet.
+
+M8.3 will handle dashboard design.
+
+Do NOT leave insecure defaults such as:
+
+admin/admin
+anonymous access
+
+Use an environment variable for the admin credential.
+
+Document the required variable in an example environment/configuration file.
+
+For local development expose Grafana only through loopback if practical.
+
+Expected host port:
+
+3001
+
+Do not conflict with existing services.
+
+==================================================
+4. NETWORKING
+==================================================
+
+Create a dedicated monitoring network.
+
+Prometheus, Grafana and Loki must communicate using Docker service DNS.
+
+Example concept:
+
+Grafana
+  → http://prometheus:9090
+  → http://loki:3100
+
+Do not depend on hardcoded container IP addresses.
+
+==================================================
+5. PERSISTENCE
+==================================================
+
+Create named persistent volumes for:
+
+- Prometheus data
+- Grafana data
+- Loki data
+
+Do not rely on anonymous volumes.
+
+Use bounded retention so disk usage remains reasonable.
+
+==================================================
+6. CONTAINER NAMES
+==================================================
+
+There are old stopped containers with names such as:
+
+nexus-prometheus
+nexus-grafana
+nexus-loki
+nexus-promtail
+
+They belong to an older workspace/runtime.
+
+Do NOT delete them.
+
+Do NOT modify them.
+
+Avoid fixed container names that could cause collisions.
+
+Use Compose-managed service names or another collision-safe naming strategy.
+
+==================================================
+7. PORTS
+==================================================
+
+Expected local ports:
+
+Prometheus: 9090
+Grafana: 3001
+Loki: 3100
+
+Expose monitoring ports only as necessary.
+
+Prefer loopback-only host bindings for local development.
+
+Do not modify port 5432.
+
+Do not modify port 5050.
+
+==================================================
+8. EXISTING CONFIGURATION
+==================================================
+
+The repository already contains monitoring configuration under:
+
+backend/monitoring/
+
+Inspect the existing files and reuse valid configuration where appropriate.
+
+Do not blindly duplicate configuration.
+
+There was previously a reference to a Prometheus config path that does not exist.
+
+Correct this cleanly.
+
+Make sure all Compose bind mounts point to real files.
+
+==================================================
+9. PROMTAIL
+==================================================
+
+Do NOT start or include Promtail in M8.1.
+
+The current architecture does not need it.
+
+The existing Agent → Loki Render bridge is sufficient as the initial log ingestion path.
+
+Do not delete historical Promtail files unless they are clearly part of the newly replaced M8.1 configuration and doing so is necessary.
+
+Avoid unnecessary cleanup.
+
+==================================================
+10. DOCUMENTATION
+==================================================
+
+Update only the documentation necessary to explain the new M8.1 setup.
+
+Document:
+
+- how to start monitoring independently
+- Prometheus URL
+- Grafana URL
+- Loki endpoint
+- required Grafana credential variable
+- how to stop monitoring
+- persistent volumes
+- that M8.1 monitors NexusDeploy infrastructure only
+- that deployed external projects are NOT yet monitored
+- that M8.2 will connect real metrics/logs
+
+Do NOT claim deployed-project monitoring is complete.
+
+==================================================
+11. HARDWARE CONSTRAINT
+==================================================
+
+Development machine:
+
+Intel i7
+16 GB RAM
+Windows 11
+No useful dedicated GPU
+
+Keep the monitoring stack lightweight.
+
+Avoid unnecessary exporters/collectors.
+
+Use conservative retention and scrape settings.
+
+==================================================
+12. TESTING
+==================================================
+
+After implementation:
+
+First validate Compose configuration.
+
+Then start ONLY the monitoring stack.
+
+Do NOT start the complete application/database Compose stack.
+
+Verify:
+
+1. Prometheus container starts.
+2. Grafana container starts.
+3. Loki container starts.
+4. All three are healthy/ready.
+5. Prometheus UI responds on localhost:9090.
+6. Grafana responds on localhost:3001.
+7. Loki readiness responds on localhost:3100.
+8. Grafana has Prometheus datasource.
+9. Grafana has Loki datasource.
+10. Prometheus can resolve monitoring service names.
+11. Prometheus monitoring targets become UP where applicable.
+12. Loki can accept its push endpoint.
+13. Persistent volumes are actually mounted.
+14. Restarting the monitoring stack preserves persistent data where applicable.
+15. PostgreSQL and pgAdmin remain untouched.
+
+Do not fabricate successful checks.
+
+==================================================
+13. REGRESSION SAFETY
+==================================================
+
+Do NOT modify:
+
+- backend application code
+- Agent code
+- frontend code
+- database schema
+- migrations
+- M6.2 reporting
+- M5 WebSocket routing
+- deployment providers
+- authentication
+- M7 environment variables
+
+M8.1 is infrastructure foundation only.
+
+==================================================
+14. FINAL REPORT
+==================================================
+
+After implementation report:
+
+### Files changed
+List every file.
+
+### Monitoring architecture
+Show final architecture diagram.
+
+### Services
+Report:
+- Prometheus
+- Grafana
+- Loki
+
+### Ports
+Report actual host bindings.
+
+### Persistence
+Report actual volumes.
+
+### Security
+Report Grafana authentication/access configuration.
+
+### Validation
+Report exact commands and results.
+
+### Resource-conscious decisions
+Explain what was deliberately NOT added.
+
+### Limitations
+Explicitly state:
+
+- no deployed-project metrics yet
+- no general Agent log persistence yet
+- no Grafana dashboard yet
+- M7 not implemented
+
+### Git verification
+Run:
+
+git diff --stat
+git status --short
+git diff --check
+
+Do not claim M8.1 complete if validation fails.
+
+Do not commit unless explicitly asked.
+
+==================================================
+
+IMPLEMENT M8.1 NOW.

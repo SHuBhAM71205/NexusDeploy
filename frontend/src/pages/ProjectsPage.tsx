@@ -1,5 +1,7 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
+  Activity,
   Boxes,
   Plus,
   Search,
@@ -26,7 +28,10 @@ import type { Project, EnvVar } from '../types';
 const FRAMEWORK_FILTERS = ['All', 'React / Vite', 'Next.js', 'Node.js / Express', 'FastAPI / Python', 'Go'];
 
 export function ProjectsPage() {
+  const navigate = useNavigate();
   const [projects, setProjects] = useState<Project[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [search, setSearch] = useState('');
   const [selectedFramework, setSelectedFramework] = useState('All');
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
@@ -38,13 +43,19 @@ export function ProjectsPage() {
   const [showSecrets, setShowSecrets] = useState<{ [key: string]: boolean }>({});
   const [newKey, setNewKey] = useState('');
   const [newValue, setNewValue] = useState('');
+  const [envSaveNotice, setEnvSaveNotice] = useState<string | null>(null);
+  const [isLoadingEnvVars, setIsLoadingEnvVars] = useState(false);
+  const [isSavingEnvVars, setIsSavingEnvVars] = useState(false);
 
   const loadProjects = async () => {
+    setIsLoading(true);
+    setLoadError(null);
     try {
-      const data = await api.getProjects();
-      setProjects(data);
-    } catch {
-      // Safe fallback
+      setProjects(await api.getProjects());
+    } catch (error) {
+      setLoadError(error instanceof Error ? error.message : 'Unable to load projects.');
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -52,13 +63,8 @@ export function ProjectsPage() {
     loadProjects();
   }, []);
 
-  const handleCreateProject = async (data: Partial<Project>) => {
-    try {
-      await api.createProject(data);
-      loadProjects();
-    } catch {
-      // Handled
-    }
+  const handleCreateProject = (data: Partial<Project>) => {
+    return api.createProject(data);
   };
 
   const handleDeleteProject = async (id: string) => {
@@ -66,24 +72,37 @@ export function ProjectsPage() {
     try {
       await api.deleteProject(id);
       loadProjects();
-    } catch {
-      // Handled
+    } catch (error) {
+      setLoadError(error instanceof Error ? error.message : 'Unable to delete project.');
     }
   };
 
-  const handleOpenEnvModal = (project: Project) => {
+  const handleOpenEnvModal = async (project: Project) => {
     setSelectedEnvProject(project);
-    setEnvVars(project.environment_variables || []);
+    setEnvVars([]);
+    setEnvSaveNotice(null);
+    setIsLoadingEnvVars(true);
+    try {
+      const variables = await api.getEnvVars(project.id);
+      setEnvVars(variables);
+    } catch (error) {
+      setEnvSaveNotice(error instanceof Error ? error.message : 'Unable to load provider environment variables.');
+    } finally {
+      setIsLoadingEnvVars(false);
+    }
   };
 
   const handleSaveEnvVars = async () => {
     if (!selectedEnvProject) return;
+    setIsSavingEnvVars(true);
     try {
-      await api.updateEnvVars(selectedEnvProject.id, envVars);
-      setSelectedEnvProject(null);
-      loadProjects();
-    } catch {
-      // Handled
+      const response = await api.updateEnvVars(selectedEnvProject.id, envVars);
+      setEnvVars(response);
+      setEnvSaveNotice(`Synced ${response.length} variables to ${selectedEnvProject.platform}. Changes apply on the next deployment.`);
+    } catch (error) {
+      setEnvSaveNotice(error instanceof Error ? error.message : 'Unable to submit environment variables.');
+    } finally {
+      setIsSavingEnvVars(false);
     }
   };
 
@@ -94,17 +113,29 @@ export function ProjectsPage() {
     setNewValue('');
   };
 
-  const handleRemoveEnv = (index: number) => {
-    setEnvVars(envVars.filter((_, i) => i !== index));
+  const handleRemoveEnv = async (index: number) => {
+    const variable = envVars[index];
+    if (selectedEnvProject && variable.id) {
+      setIsSavingEnvVars(true);
+      try {
+        await api.deleteEnvVar(selectedEnvProject.id, variable.id);
+      } catch (error) {
+        setEnvSaveNotice(error instanceof Error ? error.message : 'Unable to delete provider environment variable.');
+        setIsSavingEnvVars(false);
+        return;
+      }
+      setIsSavingEnvVars(false);
+    }
+    setEnvVars((previous) => previous.filter((_, currentIndex) => currentIndex !== index));
   };
+
+  const normalize = (s?: string | null) => (s || '').toLowerCase().replace(/[^a-z0-9]/g, '');
 
   const filteredProjects = projects.filter((p) => {
     const matchesSearch =
       !search ||
-      p.name.toLowerCase().includes(search.toLowerCase()) ||
-      (p.description && p.description.toLowerCase().includes(search.toLowerCase())) ||
-      p.framework.toLowerCase().includes(search.toLowerCase());
-    const matchesFw = selectedFramework === 'All' || p.framework.toLowerCase().includes(selectedFramework.toLowerCase());
+      [p.name, p.description, p.framework].some((f) => f && normalize(f).includes(normalize(search)));
+    const matchesFw = selectedFramework === 'All' || normalize(p.framework).includes(normalize(selectedFramework));
     return matchesSearch && matchesFw;
   });
 
@@ -134,7 +165,7 @@ export function ProjectsPage() {
       {/* Filter and Search Controls */}
       <div className="flex flex-wrap items-center justify-between gap-4">
         {/* Search */}
-        <div className="relative flex-1 min-w-[240px] max-w-md">
+        <div className="relative flex-1 min-w-60 max-w-md">
           <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
           <input
             type="text"
@@ -186,11 +217,21 @@ export function ProjectsPage() {
       </div>
 
       {/* Projects Grid / List */}
-      {filteredProjects.length === 0 ? (
+      {loadError ? (
+        <Card variant="glass" className="p-8 text-center" role="alert">
+          <h3 className="text-base font-semibold text-slate-900 dark:text-white">Projects could not be loaded</h3>
+          <p className="mt-1 text-xs text-rose-600 dark:text-rose-400">{loadError}</p>
+          <button type="button" onClick={loadProjects} className="mt-4 rounded-lg border px-3 py-1.5 text-xs">Retry</button>
+        </Card>
+      ) : isLoading ? (
+        <Card variant="glass" className="p-8 text-center text-xs text-slate-500">Loading projects...</Card>
+      ) : filteredProjects.length === 0 ? (
         <Card variant="glass" className="p-12 text-center">
           <Boxes size={36} className="mx-auto text-slate-400 mb-3" />
           <h3 className="text-base font-semibold text-slate-900 dark:text-white">No projects found</h3>
-          <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">Try adjusting your search or framework filter.</p>
+          <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
+            {projects.length === 0 ? 'Create a project to get started.' : 'Try adjusting your search or framework filter.'}
+          </p>
         </Card>
       ) : viewMode === 'grid' ? (
         <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
@@ -205,16 +246,16 @@ export function ProjectsPage() {
                 <div className="flex items-start justify-between">
                   <div>
                     <h3 className="text-base font-bold text-slate-900 dark:text-white tracking-tight">{proj.name}</h3>
-                    <p className="text-xs text-indigo-600 dark:text-indigo-400 font-mono mt-0.5 font-medium">{proj.framework}</p>
+                    <p className="text-xs text-indigo-600 dark:text-indigo-400 font-mono mt-0.5 font-medium">{proj.framework || 'Framework unavailable'}</p>
                   </div>
-                  <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-500/25 bg-emerald-50 text-emerald-700 dark:border-emerald-500/20 dark:bg-emerald-500/10 dark:text-emerald-400 px-2.5 py-0.5 text-xs font-medium">
-                    <span className="size-1.5 rounded-full bg-emerald-500" /> Active
+                    <span className="inline-flex items-center gap-1.5 rounded-full border border-slate-300 bg-slate-100 text-slate-700 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300 px-2.5 py-0.5 text-xs font-medium">
+                    {proj.status}
                   </span>
                 </div>
 
                 {/* Description */}
                 <p className="mt-3 text-xs text-slate-500 dark:text-slate-400 line-clamp-2 leading-relaxed">
-                  {proj.description || 'Cloud deployed service with automated edge caching and health monitoring.'}
+                  {proj.description || 'No description provided.'}
                 </p>
 
                 {/* Info Pills */}
@@ -229,7 +270,7 @@ export function ProjectsPage() {
                     <span className="flex items-center gap-1.5 text-slate-400 dark:text-slate-500">
                       <Clock size={13} /> Last Deployed
                     </span>
-                    <span className="text-slate-700 dark:text-slate-300">{proj.last_deployed_at || 'Recently'}</span>
+                    <span className="text-slate-700 dark:text-slate-300">{proj.last_deployed_at ? new Date(proj.last_deployed_at).toLocaleString() : 'No deployments'}</span>
                   </div>
                   <div className="flex items-center justify-between font-mono text-slate-500 dark:text-slate-400">
                     <span className="flex items-center gap-1.5 text-slate-400 dark:text-slate-500">
@@ -243,6 +284,14 @@ export function ProjectsPage() {
               {/* Card Footer Actions */}
               <div className="mt-6 border-t border-slate-100 dark:border-slate-800/80 pt-4 flex items-center justify-between">
                 <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => navigate(`/projects/${proj.id}`)}
+                    className="flex items-center gap-1 rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-50 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-300 dark:hover:bg-slate-800"
+                  >
+                    <Activity size={12} />
+                    <span>Dashboard</span>
+                  </button>
                   {proj.production_url && (
                     <a
                       href={proj.production_url}
@@ -319,14 +368,21 @@ export function ProjectsPage() {
                           </a>
                         )}
                       </div>
-                      <p className="text-[11px] text-slate-500 dark:text-slate-400 truncate max-w-sm font-normal">{p.description}</p>
+                      <p className="text-[11px] text-slate-500 dark:text-slate-400 truncate max-w-sm font-normal">{p.description || 'No description provided.'}</p>
                     </td>
-                    <td className="px-6 py-4 text-slate-700 dark:text-slate-300 font-mono">{p.framework}</td>
+                    <td className="px-6 py-4 text-slate-700 dark:text-slate-300 font-mono">{p.framework || 'Unavailable'}</td>
                     <td className="px-6 py-4 text-slate-500 dark:text-slate-400 font-mono">{p.branch}</td>
-                    <td className="px-6 py-4 text-slate-500 dark:text-slate-400">{p.last_deployed_at || 'Recently'}</td>
+                    <td className="px-6 py-4 text-slate-500 dark:text-slate-400">{p.last_deployed_at ? new Date(p.last_deployed_at).toLocaleString() : 'No deployments'}</td>
                     <td className="px-6 py-4 text-slate-700 dark:text-slate-300 font-mono font-medium">{p.total_deploys}</td>
                     <td className="px-6 py-4 text-right">
                       <div className="flex items-center justify-end gap-2">
+                        <button
+                          type="button"
+                          onClick={() => navigate(`/projects/${p.id}`)}
+                          className="rounded-lg border border-slate-200 bg-white px-2.5 py-1 text-xs text-slate-700 shadow-xs hover:bg-slate-50 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-300 dark:hover:bg-slate-800"
+                        >
+                          Dashboard
+                        </button>
                         <button
                           type="button"
                           onClick={() => handleOpenEnvModal(p)}
@@ -361,6 +417,9 @@ export function ProjectsPage() {
           size="md"
         >
           <div className="space-y-4">
+            <p className="text-xs text-slate-500 dark:text-slate-400">Variables are synchronized with the connected provider. Stored values are never returned.</p>
+            {isLoadingEnvVars && <p role="status" className="text-xs text-slate-500">Loading provider variables...</p>}
+            {envSaveNotice && <p role="status" className="text-xs text-amber-700 dark:text-amber-300">{envSaveNotice}</p>}
             <div className="max-h-60 overflow-y-auto space-y-2">
               {envVars.length === 0 ? (
                 <p className="text-xs text-slate-400 dark:text-slate-500 italic py-3 text-center">No environment variables set yet.</p>
@@ -369,11 +428,12 @@ export function ProjectsPage() {
                   <div key={idx} className="flex items-center gap-2 rounded-xl border border-slate-200 bg-slate-50 p-2.5 dark:border-slate-800 dark:bg-slate-950">
                     <span className="flex-1 font-mono text-xs text-indigo-700 dark:text-indigo-300 font-semibold">{env.key}</span>
                     <span className="flex-1 font-mono text-xs text-slate-600 dark:text-slate-300">
-                      {showSecrets[env.key] ? env.value : '••••••••••••••••'}
+                      {env.id ? 'Stored in provider' : showSecrets[env.key] ? env.value : '••••••••••••••••'}
                     </span>
                     <button
                       type="button"
                       onClick={() => setShowSecrets({ ...showSecrets, [env.key]: !showSecrets[env.key] })}
+                      disabled={Boolean(env.id)}
                       className="rounded p-1 text-slate-400 hover:text-slate-700 dark:hover:text-white"
                       title="Toggle Visibility"
                     >
@@ -401,7 +461,7 @@ export function ProjectsPage() {
                 className="flex-1 rounded-xl border border-slate-200 bg-white px-3 py-1.5 font-mono text-xs text-slate-900 placeholder:text-slate-400 focus:border-indigo-500 focus:outline-none dark:border-slate-700 dark:bg-slate-950 dark:text-white dark:placeholder:text-slate-600"
               />
               <input
-                type="text"
+                type="password"
                 placeholder="Value"
                 value={newValue}
                 onChange={(e) => setNewValue(e.target.value)}
@@ -427,6 +487,7 @@ export function ProjectsPage() {
               <button
                 type="button"
                 onClick={handleSaveEnvVars}
+                disabled={isLoadingEnvVars || isSavingEnvVars}
                 className="rounded-xl bg-indigo-600 px-4 py-2 text-xs font-semibold text-white shadow-sm shadow-indigo-600/20 hover:bg-indigo-500"
               >
                 Save Variables
@@ -441,6 +502,7 @@ export function ProjectsPage() {
         isOpen={isNewModalOpen}
         onClose={() => setIsNewModalOpen(false)}
         onSubmit={handleCreateProject}
+        onRefresh={loadProjects}
       />
 
       {/* Trigger Deploy Modal */}
@@ -450,11 +512,8 @@ export function ProjectsPage() {
           onClose={() => setDeployTargetProject(null)}
           projects={projects}
           selectedProjectId={deployTargetProject.id}
-          onSubmit={async (data) => {
-            await api.triggerDeployment(data);
-            setDeployTargetProject(null);
-            loadProjects();
-          }}
+          onSubmit={api.triggerDeployment}
+          onRefresh={loadProjects}
         />
       )}
 

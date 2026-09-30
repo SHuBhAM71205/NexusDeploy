@@ -22,7 +22,7 @@ print(f"{alembic_config_section.get('sqlalchemy.url')}")
 if config.config_file_name is not None:
     fileConfig(config.config_file_name)
 
-from app.db.models.Base import Base
+from app.db.models import Base
 
 target_metadata = Base.metadata
 

@@ -1,4 +1,5 @@
 import axios from 'axios';
+import type { EnvVar } from '../types';
 
 const AGENT_URL = 'http://localhost:3030';
 const agentClient = axios.create({ baseURL: AGENT_URL, timeout: 10_000 });
@@ -45,6 +46,10 @@ export interface AgentProject {
   frontendId?: string;
   ownerId?: string;
   created_at?: string;
+  // Milestone 3: deployment-result fields (present only on records created after M3)
+  deploymentStatus?: 'success' | 'failed';
+  jobId?: string;
+  error?: string;
 }
 
 export const agentApi = {
@@ -101,15 +106,53 @@ export const agentApi = {
     return res.data;
   },
 
+  async getEnvironmentVariables(provider: string, projectName: string): Promise<{ variables: EnvVar[] }> {
+    const res = await agentClient.get('/api/agent/environment-variables', {
+      params: { provider, projectName },
+    });
+    return res.data;
+  },
+
+  async syncEnvironmentVariables(provider: string, projectName: string, variables: EnvVar[]): Promise<{ variables: EnvVar[] }> {
+    const res = await agentClient.post('/api/agent/environment-variables', {
+      provider,
+      projectName,
+      variables,
+    });
+    return res.data;
+  },
+
+  async deleteEnvironmentVariable(provider: string, projectName: string, variableId: string): Promise<void> {
+    await agentClient.delete('/api/agent/environment-variables', {
+      data: { provider, projectName, variableId },
+    });
+  },
+
   async deploy(payload: {
     provider: string;
     path: string;
+    project_id?: string;
+    project_url?: string;
     repository?: string;
     repoUrl?: string;
     repoName?: string;
     envVars?: Array<{ key: string; value: string }>;
-  }): Promise<{ status: string; message: string }> {
+  }): Promise<{ status: string; jobId: string; message: string }> {
     const res = await agentClient.post('/api/agent/deploy', payload);
+    return res.data;
+  },
+
+  async getDeploymentStatus(jobId: string): Promise<{
+    jobId: string;
+    status: 'started' | 'running' | 'success' | 'failed';
+    provider: string;
+    projectName: string;
+    startedAt: string;
+    completedAt: string | null;
+    url: string | null;
+    error: string | null;
+  }> {
+    const res = await agentClient.get(`/api/agent/deploy/status/${jobId}`);
     return res.data;
   },
 
@@ -124,8 +167,9 @@ export const agentApi = {
   },
 
   connectLogStream(
-    onLog: (log: { time: string; type: string; msg: string }) => void,
+    onLog: (log: { time: string; type: string; msg: string; jobId?: string }) => void,
     onStatusChange?: (connected: boolean) => void,
+    jobId?: string,
   ): () => void {
     let ws: WebSocket | null = null;
     let isConnected = false;
@@ -136,6 +180,10 @@ export const agentApi = {
       ws.onopen = () => {
         isConnected = true;
         onStatusChange?.(true);
+        // Milestone 5: subscribe to a specific job's logs immediately after connecting
+        if (jobId && ws && ws.readyState === WebSocket.OPEN) {
+          ws.send(JSON.stringify({ subscribe: jobId }));
+        }
       };
 
       ws.onmessage = (event) => {

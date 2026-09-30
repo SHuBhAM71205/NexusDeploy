@@ -4,6 +4,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from starlette.middleware.sessions import SessionMiddleware
 
 from app.core.config import settings
+from app.core.metrics import instrument_app
 from app.api.routes import api_router
 from app.api.routes import auth
 
@@ -14,6 +15,9 @@ app = FastAPI(
     docs_url="/docs",
     redoc_url="/redoc",
 )
+
+# Instrument FastAPI with Prometheus metrics
+instrument_app(app)
 
 # Combine CORS origins from settings
 cors_origins = list(settings.CORS_ORIGINS)

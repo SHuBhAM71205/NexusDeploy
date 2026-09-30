@@ -28,15 +28,15 @@ export function CommandSearchModal({ isOpen, onClose, projects, deployments }: C
   if (!isOpen) return null;
 
   const filteredProjects = projects.filter(
-    (p) => !query || p.name.toLowerCase().includes(query.toLowerCase()) || p.framework.toLowerCase().includes(query.toLowerCase()),
+    (p) => !query || p.name.toLowerCase().includes(query.toLowerCase()) || (p.framework || '').toLowerCase().includes(query.toLowerCase()),
   );
 
   const filteredDeployments = deployments.filter(
     (d) =>
       !query ||
       d.project_name.toLowerCase().includes(query.toLowerCase()) ||
-      d.commit_message.toLowerCase().includes(query.toLowerCase()) ||
-      d.commit_hash.includes(query),
+      (d.commit_message || '').toLowerCase().includes(query.toLowerCase()) ||
+      (d.commit_hash || '').includes(query),
   );
 
   const handleSelect = (path: string) => {
@@ -125,9 +125,11 @@ export function CommandSearchModal({ isOpen, onClose, projects, deployments }: C
                     <div className="flex items-center gap-2.5">
                       <Boxes size={14} className="text-emerald-500" />
                       <span className="font-semibold text-slate-900 dark:text-white">{p.name}</span>
-                      <span className="text-slate-500 dark:text-slate-400 text-[11px]">({p.framework})</span>
+                      <span className="text-slate-500 dark:text-slate-400 text-[11px]">({p.framework || 'Framework unavailable'})</span>
                     </div>
-                    <span className="text-[11px] text-slate-400">{p.last_deployed_at || 'Active'}</span>
+                    <span className="text-[11px] text-slate-400">
+                      {p.last_deployed_at ? new Date(p.last_deployed_at).toLocaleString() : 'No deployments'}
+                    </span>
                   </button>
                 ))}
               </div>
@@ -148,7 +150,7 @@ export function CommandSearchModal({ isOpen, onClose, projects, deployments }: C
                     <div className="flex items-center gap-2 truncate">
                       <span className="font-mono text-[11px] text-indigo-600 dark:text-indigo-400">{d.id}</span>
                       <span className="font-medium text-slate-900 dark:text-white">{d.project_name}</span>
-                      <span className="text-slate-500 dark:text-slate-400 truncate text-[11px] max-w-[180px]">{d.commit_message}</span>
+                      <span className="text-slate-500 dark:text-slate-400 truncate text-[11px] max-w-[180px]">{d.commit_message || 'No commit message'}</span>
                     </div>
                     <span className="text-[11px] text-emerald-600 dark:text-emerald-400 shrink-0 font-medium">{d.status}</span>
                   </button>

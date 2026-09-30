@@ -1,0 +1,94 @@
+# M8.1 — NexusDeploy monitoring infrastructure foundation.
+#
+# Dedicated, independently startable monitoring stack:
+#   docker compose -f docker-compose.monitoring.yml up -d
+#   docker compose -f docker-compose.monitoring.yml down
+#
+# It does NOT start or touch the application stack, PostgreSQL or pgAdmin.
+# Container names are Compose-managed (no fixed container_name) so they
+# cannot collide with the old stopped nexus-prometheus / nexus-grafana /
+# nexus-loki / nexus-promtail containers from an older workspace.
+#
+# Required environment variable (see eg.env.example):
+#   GRAFANA_ADMIN_PASSWORD  — Grafana admin login password (no insecure default)
+
+name: nexusdeploy-monitoring
+
+services:
+  prometheus:
+    image: prom/prometheus:v2.52.0
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:9090:9090"
+    volumes:
+      - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus_data:/prometheus
+    command:
+      - "--config.file=/etc/prometheus/prometheus.yml"
+      - "--storage.tsdb.path=/prometheus"
+      - "--storage.tsdb.retention.time=7d"   # bounded retention
+      - "--storage.tsdb.retention.size=2GB"  # disk cap for local dev
+      - "--web.console.libraries=/usr/share/prometheus/console_libraries"
+      - "--web.console.templates=/usr/share/prometheus/consoles"
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:9090/-/healthy"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+    networks:
+      - monitoring
+
+  loki:
+    image: grafana/loki:3.0.0
+    restart: unless-stopped
+    ports:
+      # The existing Agent -> Loki Render log bridge pushes to
+      # http://localhost:3100/loki/api/v1/push — keep this binding.
+      - "127.0.0.1:3100:3100"
+    volumes:
+      - ./monitoring/loki-config.yml:/etc/loki/local-config.yaml:ro
+      - loki_data:/loki
+    command: ["-config.file=/etc/loki/local-config.yaml"]
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:3100/ready"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+    networks:
+      - monitoring
+
+  grafana:
+    image: grafana/grafana:11.0.0
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:3001:3000"
+    environment:
+      # No insecure defaults: password must be provided, anonymous access off.
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD:?Set GRAFANA_ADMIN_PASSWORD before starting the monitoring stack}
+      GF_USERS_ALLOW_SIGN_UP: "false"
+      GF_AUTH_ANONYMOUS_ENABLED: "false"
+      GF_AUTH_DISABLE_LOGIN_FORM: "false"
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./monitoring/grafana-datasource.yml:/etc/grafana/provisioning/datasources/datasource.yaml:ro
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:3000/api/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+    depends_on:
+      prometheus:
+        condition: service_started
+      loki:
+        condition: service_started
+    networks:
+      - monitoring
+
+volumes:
+  prometheus_data:
+  grafana_data:
+  loki_data:
+
+networks:
+  monitoring:
+    driver: bridge

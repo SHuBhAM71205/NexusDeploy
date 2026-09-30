@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Modal } from './Modal';
 import { FolderPickerModal } from './FolderPickerModal';
 import { TokenPromptModal } from './TokenPromptModal';
@@ -21,7 +21,8 @@ import type { Project, Framework, EnvVar } from '../../types';
 interface NewProjectModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onSubmit: (project: Partial<Project>) => void;
+  onSubmit: (project: Partial<Project>) => Promise<Project>;
+  onRefresh: () => void;
 }
 
 const cloudPlatforms = [
@@ -45,7 +46,7 @@ const frameworkPresets: Record<
   'Static HTML': { build: 'echo "No build required"', output: './', install: 'echo "No install required"', node: 'None' },
 };
 
-export function NewProjectModal({ isOpen, onClose, onSubmit }: NewProjectModalProps) {
+export function NewProjectModal({ isOpen, onClose, onSubmit, onRefresh }: NewProjectModalProps) {
   const [step, setStep] = useState(1); // 1: Config, 2: Auth Tokens, 3: Deploy
   const [sourceType, setSourceType] = useState<'local' | 'github'>('local');
   const [name, setName] = useState('');
@@ -75,19 +76,27 @@ export function NewProjectModal({ isOpen, onClose, onSubmit }: NewProjectModalPr
   const [tokens, setTokens] = useState<Record<string, string>>({});
 
   // Deploy execution states
-  const [deployStatus, setDeployStatus] = useState<'idle' | 'running' | 'success' | 'failed'>('idle');
+  const [deployStatus, setDeployStatus] = useState<'idle' | 'creating' | 'running' | 'success' | 'failed'>('idle');
   const [deployLogs, setDeployLogs] = useState<Array<{ time: string; type: string; msg: string }>>([]);
   const [deployedUrl, setDeployedUrl] = useState<string | null>(null);
   const [deployError, setDeployError] = useState<string | null>(null);
+  const [currentJobId, setCurrentJobId] = useState<string | null>(null);
+  const activeJobIdRef = useRef<string | null>(null);
+  const isStartingDeploymentRef = useRef(false);
+  // Milestone 5: holds the WS disconnect function so we can clean it up on close
+  const disconnectLogsRef = useRef<(() => void) | null>(null);
 
   useEffect(() => {
     if (isOpen) {
-      setStep(1);
-      setDeployStatus('idle');
-      setDeployLogs([]);
-      setDeployedUrl(null);
-      setDeployError(null);
-      
+      setStep(activeJobIdRef.current || isStartingDeploymentRef.current ? 3 : 1);
+      if (!activeJobIdRef.current && !isStartingDeploymentRef.current) {
+        setDeployStatus('idle');
+        setDeployLogs([]);
+        setDeployedUrl(null);
+        setDeployError(null);
+        setCurrentJobId(null);
+      }
+
       agentApi.browse().then((res) => {
         if (res?.currentPath) {
           setRootDirectory(res.currentPath);
@@ -95,9 +104,12 @@ export function NewProjectModal({ isOpen, onClose, onSubmit }: NewProjectModalPr
           setName(folderName);
         }
       }).catch(() => {});
+    } else {
+      // Cleanup: close any open log stream when the modal closes
+      disconnectLogsRef.current?.();
+      disconnectLogsRef.current = null;
     }
   }, [isOpen]);
-
   useEffect(() => {
     if (rootDirectory && rootDirectory.length > 2) {
       agentApi.analyze(rootDirectory).then((res) => {
@@ -161,54 +173,105 @@ export function NewProjectModal({ isOpen, onClose, onSubmit }: NewProjectModalPr
   };
 
   const startDeployment = async () => {
+    if (isStartingDeploymentRef.current || activeJobIdRef.current) return;
+
+    isStartingDeploymentRef.current = true;
     setStep(3);
-    setDeployStatus('running');
+    setDeployStatus('creating');
     setDeployLogs([]);
     setDeployedUrl(null);
     setDeployError(null);
 
-    agentApi.connectLogStream((log) => {
-      setDeployLogs((prev) => [...prev, log]);
-
-      if (log.msg.includes('Live URL:') || log.msg.includes('Deployment live:')) {
-        const match = log.msg.match(/(https:\/\/\S+)/);
-        const liveUrl = match ? match[1] : `https://${name.toLowerCase()}.nexusdeploy.app`;
-        setDeployedUrl(liveUrl);
-        setDeployStatus('success');
-      } else if (log.msg.includes('failed') || log.msg.includes('aborted') || log.msg.includes('Error!')) {
-        setDeployStatus('failed');
-        setDeployError(log.msg);
-      }
-    });
+    // Close any previous log stream before starting a new one
+    disconnectLogsRef.current?.();
+    disconnectLogsRef.current = null;
 
     try {
-      await agentApi.deploy({
-        provider: platform,
-        path: sourceType === 'local' ? rootDirectory : 'C:/',
-        repository: sourceType,
-        repoUrl: repoUrl || undefined,
-        repoName: name || 'nexus-app',
-        envVars: envVars.filter((ev) => ev.key.trim().length > 0).map((ev) => ({ key: ev.key.trim(), value: ev.value })),
-      });
-
-      onSubmit({
+      const project = await onSubmit({
         name: name.trim() || 'nexus-app',
         platform,
-        description: description.trim() || undefined,
-        repo_url: repoUrl.trim() || 'https://github.com/nexusdeploy/demo-service',
+        description: description.trim() || null,
+        repo_url: repoUrl.trim() || null,
         branch: gitBranch.trim() || 'main',
         framework,
         root_directory: rootDirectory.trim(),
         build_command: buildCommand,
         output_directory: outputDir,
         install_command: installCommand,
+        node_version: frameworkPresets[framework].node,
         environment_variables: envVars.filter((ev) => ev.key.trim().length > 0),
       });
+      onRefresh();
+      setDeployStatus('running');
+
+      const result = await agentApi.deploy({
+        provider: (project.platform || platform).toLowerCase(),
+        path: sourceType === 'local' ? project.root_directory : 'C:/',
+        project_id: project.id,
+        repository: sourceType,
+        repoUrl: repoUrl || undefined,
+        repoName: name || 'nexus-app',
+        envVars: envVars.filter((ev) => ev.key.trim().length > 0).map((ev) => ({ key: ev.key.trim(), value: ev.value })),
+      });
+
+      if (result.jobId) {
+        isStartingDeploymentRef.current = false;
+        activeJobIdRef.current = result.jobId;
+        setCurrentJobId(result.jobId);
+
+        // Milestone 5: connect log stream *after* we have jobId so it subscribes correctly
+        disconnectLogsRef.current = agentApi.connectLogStream(
+          (log) => setDeployLogs((prev) => [...prev, log]),
+          undefined,
+          result.jobId,
+        );
+      } else {
+        isStartingDeploymentRef.current = false;
+        // No jobId returned — treat as immediate failure
+        setDeployStatus('failed');
+        setDeployError('Agent did not return a job ID.');
+        onRefresh();
+      }
     } catch (err: any) {
+      isStartingDeploymentRef.current = false;
       setDeployStatus('failed');
       setDeployError(err?.response?.data?.message || err.message || 'Deployment execution failed.');
+      onRefresh();
     }
   };
+
+  // Milestone 4: Poll job status when currentJobId is set
+  useEffect(() => {
+    if (!currentJobId || deployStatus === 'success' || deployStatus === 'failed') {
+      return; // No polling if no job, or if already in terminal state
+    }
+
+    const pollInterval = setInterval(async () => {
+      try {
+        const job = await agentApi.getDeploymentStatus(currentJobId);
+
+        if (job.status === 'success') {
+          activeJobIdRef.current = null;
+          setDeployStatus('success');
+          setDeployedUrl(job.url || null);
+          setDeployError(null);
+          onRefresh();
+        } else if (job.status === 'failed') {
+          activeJobIdRef.current = null;
+          setDeployStatus('failed');
+          setDeployError(job.error || 'Deployment failed.');
+          setDeployedUrl(null);
+          onRefresh();
+        }
+        // else job is still 'started' or 'running' — keep polling
+      } catch (pollErr) {
+        console.error('Job status poll error:', pollErr);
+        // Don't stop polling on transient errors — agent might be restarting
+      }
+    }, 2500);
+
+    return () => clearInterval(pollInterval);
+  }, [currentJobId, deployStatus]);
 
   return (
     <>
@@ -539,14 +602,16 @@ export function NewProjectModal({ isOpen, onClose, onSubmit }: NewProjectModalPr
             <div className="space-y-4">
               <div className="rounded-xl border border-slate-200 bg-slate-50 p-3.5 dark:border-slate-800 dark:bg-slate-950 flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                  {deployStatus === 'running' && (
+                  {(deployStatus === 'creating' || deployStatus === 'running') && (
                     <span className="flex h-2.5 w-2.5 rounded-full bg-indigo-500 animate-ping" />
                   )}
                   {deployStatus === 'success' && <CheckCircle2 size={18} className="text-emerald-500" />}
                   {deployStatus === 'failed' && <XCircle size={18} className="text-rose-500" />}
                   <div>
                     <div className="text-xs font-bold text-slate-900 dark:text-white">
-                      {deployStatus === 'running'
+                      {deployStatus === 'creating'
+                        ? 'Creating PostgreSQL project...'
+                        : deployStatus === 'running'
                         ? 'Executing Live Deploy via Host Agent...'
                         : deployStatus === 'success'
                         ? 'Deployment Completed Successfully!'
