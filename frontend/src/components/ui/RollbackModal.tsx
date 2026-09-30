@@ -43,7 +43,9 @@ export function RollbackModal({ isOpen, onClose, deployment, onConfirm }: Rollba
           </div>
           <div className="flex justify-between text-slate-500 dark:text-slate-400">
             <span>Environment:</span>
-            <span className="text-emerald-600 dark:text-emerald-400 uppercase font-semibold">{deployment.environment}</span>
+            <span className="text-emerald-600 dark:text-emerald-400 uppercase font-semibold">
+              {deployment.environment}
+            </span>
           </div>
         </div>
 

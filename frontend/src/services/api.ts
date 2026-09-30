@@ -25,8 +25,18 @@ let fallbackSettings: WorkspaceSettings = {
   auto_deploy_on_push: true,
   notifications_enabled: true,
   api_keys: [
-    { id: 'key-1', name: 'GitHub CI Pipeline', masked_key: 'nxd_live_••••••••9941', created_at: '2026-07-10' },
-    { id: 'key-2', name: 'Nexus CLI CLI Tool', masked_key: 'nxd_live_••••••••1288', created_at: '2026-08-01' },
+    {
+      id: 'key-1',
+      name: 'GitHub CI Pipeline',
+      masked_key: 'nxd_live_••••••••9941',
+      created_at: '2026-07-10',
+    },
+    {
+      id: 'key-2',
+      name: 'Nexus CLI CLI Tool',
+      masked_key: 'nxd_live_••••••••1288',
+      created_at: '2026-08-01',
+    },
   ],
 };
 
@@ -236,7 +246,8 @@ export const api = {
 
   async logout(): Promise<void> {
     try {
-      await http.post('/auth/logout');
+      const response = await http.post('/auth/logout');
+      console.log(response);
     } catch {
       // Ignore
     }
@@ -247,4 +258,3 @@ export const api = {
     return `${backendUrl}/auth/oauth/google`;
   },
 };
-

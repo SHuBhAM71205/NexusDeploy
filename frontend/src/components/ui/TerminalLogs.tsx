@@ -16,11 +16,16 @@ export function TerminalLogs({ deployment, onRollback }: TerminalLogsProps) {
   const logs: LogLine[] = deployment.logs || [];
 
   const filteredLogs = logs.filter(
-    (l) => !search || l.message.toLowerCase().includes(search.toLowerCase()) || l.timestamp.includes(search),
+    (l) =>
+      !search ||
+      l.message.toLowerCase().includes(search.toLowerCase()) ||
+      l.timestamp.includes(search),
   );
 
   const handleCopy = () => {
-    const text = logs.map((l) => `[${l.timestamp}] [${l.level.toUpperCase()}] ${l.message}`).join('\n');
+    const text = logs
+      .map((l) => `[${l.timestamp}] [${l.level.toUpperCase()}] ${l.message}`)
+      .join('\n');
     navigator.clipboard.writeText(text);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
@@ -49,7 +54,9 @@ export function TerminalLogs({ deployment, onRollback }: TerminalLogsProps) {
           </div>
           <div>
             <div className="flex items-center gap-2">
-              <span className="font-mono text-sm font-semibold text-slate-900 dark:text-white">{deployment.id}</span>
+              <span className="font-mono text-sm font-semibold text-slate-900 dark:text-white">
+                {deployment.id}
+              </span>
               <StatusBadge status={deployment.status} />
               <EnvironmentBadge env={deployment.environment} />
             </div>
@@ -112,7 +119,10 @@ export function TerminalLogs({ deployment, onRollback }: TerminalLogsProps) {
         {activeTab === 'logs' && (
           <div className="flex items-center gap-2">
             <div className="relative">
-              <Search size={14} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400" />
+              <Search
+                size={14}
+                className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400"
+              />
               <input
                 type="text"
                 placeholder="Filter logs..."
@@ -144,13 +154,22 @@ export function TerminalLogs({ deployment, onRollback }: TerminalLogsProps) {
               </p>
             ) : (
               filteredLogs.map((line, idx) => (
-                <div key={idx} className="flex items-start gap-3 leading-relaxed hover:bg-slate-900/60 px-1 py-0.5 rounded">
+                <div
+                  key={idx}
+                  className="flex items-start gap-3 leading-relaxed hover:bg-slate-900/60 px-1 py-0.5 rounded"
+                >
                   <span className="text-slate-500 select-none">{line.timestamp}</span>
-                  <span className={`uppercase font-semibold select-none text-[10px] px-1.5 py-0.2 rounded ${
-                    line.level === 'success' ? 'bg-emerald-500/20 text-emerald-300' :
-                    line.level === 'warn' ? 'bg-amber-500/20 text-amber-300' :
-                    line.level === 'error' ? 'bg-rose-500/20 text-rose-300' : 'bg-slate-800 text-slate-400'
-                  }`}>
+                  <span
+                    className={`uppercase font-semibold select-none text-[10px] px-1.5 py-0.2 rounded ${
+                      line.level === 'success'
+                        ? 'bg-emerald-500/20 text-emerald-300'
+                        : line.level === 'warn'
+                          ? 'bg-amber-500/20 text-amber-300'
+                          : line.level === 'error'
+                            ? 'bg-rose-500/20 text-rose-300'
+                            : 'bg-slate-800 text-slate-400'
+                    }`}
+                  >
                     {line.level}
                   </span>
                   <span className={getLevelColor(line.level)}>{line.message}</span>

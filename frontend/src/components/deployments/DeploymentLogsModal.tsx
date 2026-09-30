@@ -65,7 +65,9 @@ export function DeploymentLogsModal({ deployment: selectedDeployment, onClose }:
   });
 
   const handleCopyLogs = () => {
-    const logText = logs.map((l) => `[${l.timestamp}] [${l.level.toUpperCase()}] ${l.message}`).join('\n');
+    const logText = logs
+      .map((l) => `[${l.timestamp}] [${l.level.toUpperCase()}] ${l.message}`)
+      .join('\n');
     navigator.clipboard.writeText(logText);
     setCopied(true);
     setTimeout(() => setCopied(false), 2500);
@@ -190,8 +192,13 @@ export function DeploymentLogsModal({ deployment: selectedDeployment, onClose }:
             </div>
           ) : (
             filteredLogs.map((log, i) => (
-              <div key={i} className="flex items-start gap-3 hover:bg-slate-900/60 p-1 rounded transition">
-                <span className="shrink-0 text-slate-600 text-[11px] select-none w-20">{log.timestamp}</span>
+              <div
+                key={i}
+                className="flex items-start gap-3 hover:bg-slate-900/60 p-1 rounded transition"
+              >
+                <span className="shrink-0 text-slate-600 text-[11px] select-none w-20">
+                  {log.timestamp}
+                </span>
                 <span
                   className={`shrink-0 rounded px-1.5 py-0.5 text-[10px] font-semibold border uppercase leading-none ${getLevelColor(
                     log.level,

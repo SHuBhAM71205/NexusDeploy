@@ -1,13 +1,5 @@
 import { useState, useEffect } from 'react';
-import {
-  Rocket,
-  Search,
-  RotateCcw,
-  Terminal,
-  ExternalLink,
-  Plus,
-  RefreshCw,
-} from 'lucide-react';
+import { Rocket, Search, RotateCcw, Terminal, ExternalLink, Plus, RefreshCw } from 'lucide-react';
 import { Card } from '../components/ui/Card';
 import { StatusBadge, EnvironmentBadge } from '../components/ui/Badge';
 import { DeploymentLogsModal } from '../components/deployments/DeploymentLogsModal';
@@ -78,8 +70,11 @@ export function DeploymentsPage() {
       (d.commit_hash || '').includes(search) ||
       (d.author || '').toLowerCase().includes(search.toLowerCase());
 
-    const matchesEnv = environmentFilter === 'all' || d.environment.toLowerCase() === environmentFilter.toLowerCase();
-    const matchesStatus = statusFilter === 'all' || d.status.toLowerCase() === statusFilter.toLowerCase();
+    const matchesEnv =
+      environmentFilter === 'all' ||
+      d.environment.toLowerCase() === environmentFilter.toLowerCase();
+    const matchesStatus =
+      statusFilter === 'all' || d.status.toLowerCase() === statusFilter.toLowerCase();
 
     return matchesSearch && matchesEnv && matchesStatus;
   });
@@ -91,7 +86,9 @@ export function DeploymentsPage() {
         <div>
           <div className="flex items-center gap-2">
             <Rocket className="size-5 text-indigo-600 dark:text-indigo-400" />
-            <h1 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-white">Deployment Pipeline</h1>
+            <h1 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-white">
+              Deployment Pipeline
+            </h1>
           </div>
           <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
             Real-time tracking of builds, rollouts, commit histories, and edge traffic routing.
@@ -198,7 +195,9 @@ export function DeploymentsPage() {
                     className="hover:bg-slate-50/80 dark:hover:bg-slate-800/30 transition cursor-pointer"
                     onClick={() => setSelectedDeployment(dep)}
                   >
-                    <td className="px-6 py-4 font-mono font-semibold text-indigo-600 dark:text-indigo-400">{dep.id}</td>
+                    <td className="px-6 py-4 font-mono font-semibold text-indigo-600 dark:text-indigo-400">
+                      {dep.id}
+                    </td>
                     <td className="px-6 py-4 font-semibold text-slate-900 dark:text-white">
                       <div className="flex items-center gap-2">
                         <span>{dep.project_name}</span>
@@ -237,7 +236,10 @@ export function DeploymentsPage() {
                       <StatusBadge status={dep.status} />
                     </td>
                     <td className="px-6 py-4 text-right">
-                      <div className="flex items-center justify-end gap-2" onClick={(e) => e.stopPropagation()}>
+                      <div
+                        className="flex items-center justify-end gap-2"
+                        onClick={(e) => e.stopPropagation()}
+                      >
                         <button
                           type="button"
                           onClick={() => setSelectedDeployment(dep)}

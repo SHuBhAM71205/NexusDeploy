@@ -27,7 +27,8 @@ export function ApiKeySecretModal({ rawSecret, keyName, onClose }: ApiKeySecretM
           </div>
           <h3 className="text-lg font-bold text-slate-900 dark:text-white">API Key Generated</h3>
           <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
-            Created live token for <span className="font-semibold text-slate-800 dark:text-slate-200">{keyName}</span>
+            Created live token for{' '}
+            <span className="font-semibold text-slate-800 dark:text-slate-200">{keyName}</span>
           </p>
         </div>
 
@@ -35,7 +36,8 @@ export function ApiKeySecretModal({ rawSecret, keyName, onClose }: ApiKeySecretM
         <div className="mb-4 flex items-start gap-2.5 rounded-2xl border border-amber-500/30 bg-amber-500/10 p-3.5 text-xs text-amber-700 dark:text-amber-300">
           <AlertTriangle size={18} className="shrink-0 text-amber-500 mt-0.5" />
           <p className="leading-relaxed">
-            <span className="font-bold">Save this secret key immediately.</span> For security reasons, you will not be able to reveal or view it again.
+            <span className="font-bold">Save this secret key immediately.</span> For security
+            reasons, you will not be able to reveal or view it again.
           </p>
         </div>
 

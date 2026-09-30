@@ -82,21 +82,24 @@ export function DashboardPage() {
       value: loadError ? 'Unavailable' : isLoading ? 'Loading' : String(projects.length),
       detail: 'PostgreSQL project records',
       icon: Rocket,
-      accent: 'text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-500/10 border-indigo-200 dark:border-indigo-500/20',
+      accent:
+        'text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-500/10 border-indigo-200 dark:border-indigo-500/20',
     },
     {
       label: 'Successful deployments',
       value: loadError ? 'Unavailable' : isLoading ? 'Loading' : String(deployments.filter((deployment) => deployment.status === 'success').length),
       detail: 'Recorded deployment records',
       icon: CheckCircle2,
-      accent: 'text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-500/10 border-emerald-200 dark:border-emerald-500/20',
+      accent:
+        'text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-500/10 border-emerald-200 dark:border-emerald-500/20',
     },
     {
       label: 'Average build time',
       value: 'Unavailable',
       detail: 'Not provided by the deployment API',
       icon: Clock3,
-      accent: 'text-sky-600 dark:text-sky-400 bg-sky-50 dark:bg-sky-500/10 border-sky-200 dark:border-sky-500/20',
+      accent:
+        'text-sky-600 dark:text-sky-400 bg-sky-50 dark:bg-sky-500/10 border-sky-200 dark:border-sky-500/20',
     },
   ];
 
@@ -153,7 +156,9 @@ export function DashboardPage() {
               </span>
             </div>
             <div className="mt-4 flex items-baseline justify-between">
-              <span className="text-3xl font-bold tracking-tight text-slate-900 dark:text-white">{value}</span>
+              <span className="text-3xl font-bold tracking-tight text-slate-900 dark:text-white">
+                {value}
+              </span>
               <span className="flex items-center text-xs font-semibold text-emerald-600 dark:text-emerald-400">
                 <ArrowUpRight size={14} className="mr-0.5" />
                 {detail}
@@ -178,8 +183,12 @@ export function DashboardPage() {
         <Card variant="glass" className="overflow-hidden">
           <div className="flex flex-wrap items-center justify-between gap-4 border-b border-slate-100 p-6 dark:border-slate-800/80">
             <div>
-              <h2 className="text-lg font-bold text-slate-900 dark:text-white">Recent Deployments</h2>
-              <p className="text-xs text-slate-500 dark:text-slate-400">Live build pipelines across all connected microservices</p>
+              <h2 className="text-lg font-bold text-slate-900 dark:text-white">
+                Recent Deployments
+              </h2>
+              <p className="text-xs text-slate-500 dark:text-slate-400">
+                Live build pipelines across all connected microservices
+              </p>
             </div>
 
             {/* Filter Tabs */}
@@ -189,10 +198,11 @@ export function DashboardPage() {
                   key={st}
                   type="button"
                   onClick={() => setFilterStatus(st)}
-                  className={`rounded-lg px-3 py-1 text-xs font-medium capitalize transition ${filterStatus === st
+                  className={`rounded-lg px-3 py-1 text-xs font-medium capitalize transition ${
+                    filterStatus === st
                       ? 'bg-white text-indigo-600 shadow-sm font-semibold dark:bg-indigo-600 dark:text-white'
                       : 'text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white'
-                    }`}
+                  }`}
                 >
                   {st}
                 </button>
@@ -266,7 +276,10 @@ export function DashboardPage() {
                       <StatusBadge status={dep.status} />
                     </td>
                     <td className="px-6 py-4 text-right">
-                      <div className="flex items-center justify-end gap-2" onClick={(e) => e.stopPropagation()}>
+                      <div
+                        className="flex items-center justify-end gap-2"
+                        onClick={(e) => e.stopPropagation()}
+                      >
                         <button
                           type="button"
                           onClick={() => setSelectedDeployment(dep)}
@@ -301,7 +314,9 @@ export function DashboardPage() {
           <Card variant="glass" className="p-5">
             <div className="flex items-center justify-between border-b border-slate-100 pb-3 dark:border-slate-800">
               <h3 className="font-bold text-slate-900 dark:text-white text-sm">Active Services</h3>
-              <span className="text-xs text-indigo-600 dark:text-indigo-400 font-mono font-semibold">{projects.length} Total</span>
+              <span className="text-xs text-indigo-600 dark:text-indigo-400 font-mono font-semibold">
+                {projects.length} Total
+              </span>
             </div>
             <div className="mt-3 space-y-2.5">
               {isLoading ? (
@@ -323,7 +338,9 @@ export function DashboardPage() {
                       <span className="inline-flex items-center gap-1 text-[10px] font-medium text-slate-600 dark:text-slate-300">
                       {p.status}
                     </span>
-                    <p className="text-[10px] text-slate-400 dark:text-slate-500 font-mono">{p.total_deploys} deploys</p>
+                    <p className="text-[10px] text-slate-400 dark:text-slate-500 font-mono">
+                      {p.total_deploys} deploys
+                    </p>
                   </div>
                 </div>
               ))}

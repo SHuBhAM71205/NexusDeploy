@@ -81,7 +81,9 @@ export function TokenPromptModal({ isOpen, onClose, provider, onSuccess }: Token
       onSuccess();
     } catch (err: any) {
       setSaving(false);
-      setError(err?.response?.data?.message || err?.message || 'Failed to save token to local keychain.');
+      setError(
+        err?.response?.data?.message || err?.message || 'Failed to save token to local keychain.',
+      );
     }
   };
 
@@ -96,13 +98,17 @@ export function TokenPromptModal({ isOpen, onClose, provider, onSuccess }: Token
       <form onSubmit={handleSubmit} className="space-y-4">
         <div className="rounded-xl border border-indigo-100 bg-indigo-50/50 p-3.5 dark:border-indigo-500/20 dark:bg-indigo-950/40">
           <div className="flex items-start gap-2.5">
-            <ShieldCheck size={18} className="text-indigo-600 dark:text-indigo-400 mt-0.5 shrink-0" />
+            <ShieldCheck
+              size={18}
+              className="text-indigo-600 dark:text-indigo-400 mt-0.5 shrink-0"
+            />
             <div className="text-xs text-slate-600 dark:text-slate-300 space-y-1">
               <p className="font-semibold text-slate-900 dark:text-white">
                 Stored securely on host machine
               </p>
               <p>
-                Your API token is stored safely in your OS keychain via the local Agent process and is never uploaded to external servers.
+                Your API token is stored safely in your OS keychain via the local Agent process and
+                is never uploaded to external servers.
               </p>
             </div>
           </div>
@@ -128,7 +134,10 @@ export function TokenPromptModal({ isOpen, onClose, provider, onSuccess }: Token
           </div>
 
           <div className="relative">
-            <KeyRound size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+            <KeyRound
+              size={15}
+              className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"
+            />
             <input
               type="password"
               required

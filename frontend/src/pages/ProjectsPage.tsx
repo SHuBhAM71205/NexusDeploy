@@ -25,7 +25,14 @@ import { ProjectSettingsDrawer } from '../components/projects/ProjectSettingsDra
 import { api } from '../services/api';
 import type { Project, EnvVar } from '../types';
 
-const FRAMEWORK_FILTERS = ['All', 'React / Vite', 'Next.js', 'Node.js / Express', 'FastAPI / Python', 'Go'];
+const FRAMEWORK_FILTERS = [
+  'All',
+  'React / Vite',
+  'Next.js',
+  'Node.js / Express',
+  'FastAPI / Python',
+  'Go',
+];
 
 export function ProjectsPage() {
   const navigate = useNavigate();
@@ -108,7 +115,10 @@ export function ProjectsPage() {
 
   const handleAddEnv = () => {
     if (!newKey.trim()) return;
-    setEnvVars([...envVars, { key: newKey.trim(), value: newValue.trim(), target: 'all', is_secret: true }]);
+    setEnvVars([
+      ...envVars,
+      { key: newKey.trim(), value: newValue.trim(), target: 'all', is_secret: true },
+    ]);
     setNewKey('');
     setNewValue('');
   };
@@ -146,7 +156,9 @@ export function ProjectsPage() {
         <div>
           <div className="flex items-center gap-2">
             <Boxes className="size-5 text-indigo-600 dark:text-indigo-400" />
-            <h1 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-white">Projects & Services</h1>
+            <h1 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-white">
+              Projects & Services
+            </h1>
           </div>
           <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
             Manage your deployed microservices, frontend applications, and API gateways.
@@ -264,7 +276,9 @@ export function ProjectsPage() {
                     <span className="flex items-center gap-1.5 text-slate-400 dark:text-slate-500">
                       <GitBranch size={13} /> Branch
                     </span>
-                    <span className="text-slate-700 dark:text-slate-300 font-medium">{proj.branch}</span>
+                    <span className="text-slate-700 dark:text-slate-300 font-medium">
+                      {proj.branch}
+                    </span>
                   </div>
                   <div className="flex items-center justify-between font-mono text-slate-500 dark:text-slate-400">
                     <span className="flex items-center gap-1.5 text-slate-400 dark:text-slate-500">
@@ -276,7 +290,9 @@ export function ProjectsPage() {
                     <span className="flex items-center gap-1.5 text-slate-400 dark:text-slate-500">
                       <Layers size={13} /> Total Builds
                     </span>
-                    <span className="text-slate-700 dark:text-slate-300 font-medium">{proj.total_deploys}</span>
+                    <span className="text-slate-700 dark:text-slate-300 font-medium">
+                      {proj.total_deploys}
+                    </span>
                   </div>
                 </div>
               </div>
@@ -353,10 +369,15 @@ export function ProjectsPage() {
               </thead>
               <tbody className="divide-y divide-slate-100 dark:divide-slate-800/60">
                 {filteredProjects.map((p) => (
-                  <tr key={p.id} className="hover:bg-slate-50/80 dark:hover:bg-slate-800/40 transition">
+                  <tr
+                    key={p.id}
+                    className="hover:bg-slate-50/80 dark:hover:bg-slate-800/40 transition"
+                  >
                     <td className="px-6 py-4 font-semibold text-slate-900 dark:text-white">
                       <div className="flex items-center gap-2">
-                        <span className="font-mono text-indigo-600 dark:text-indigo-300 font-semibold">{p.name}</span>
+                        <span className="font-mono text-indigo-600 dark:text-indigo-300 font-semibold">
+                          {p.name}
+                        </span>
                         {p.production_url && (
                           <a
                             href={p.production_url}
@@ -422,11 +443,18 @@ export function ProjectsPage() {
             {envSaveNotice && <p role="status" className="text-xs text-amber-700 dark:text-amber-300">{envSaveNotice}</p>}
             <div className="max-h-60 overflow-y-auto space-y-2">
               {envVars.length === 0 ? (
-                <p className="text-xs text-slate-400 dark:text-slate-500 italic py-3 text-center">No environment variables set yet.</p>
+                <p className="text-xs text-slate-400 dark:text-slate-500 italic py-3 text-center">
+                  No environment variables set yet.
+                </p>
               ) : (
                 envVars.map((env, idx) => (
-                  <div key={idx} className="flex items-center gap-2 rounded-xl border border-slate-200 bg-slate-50 p-2.5 dark:border-slate-800 dark:bg-slate-950">
-                    <span className="flex-1 font-mono text-xs text-indigo-700 dark:text-indigo-300 font-semibold">{env.key}</span>
+                  <div
+                    key={idx}
+                    className="flex items-center gap-2 rounded-xl border border-slate-200 bg-slate-50 p-2.5 dark:border-slate-800 dark:bg-slate-950"
+                  >
+                    <span className="flex-1 font-mono text-xs text-indigo-700 dark:text-indigo-300 font-semibold">
+                      {env.key}
+                    </span>
                     <span className="flex-1 font-mono text-xs text-slate-600 dark:text-slate-300">
                       {env.id ? 'Stored in provider' : showSecrets[env.key] ? env.value : '••••••••••••••••'}
                     </span>

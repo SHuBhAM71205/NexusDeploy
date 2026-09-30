@@ -10,7 +10,12 @@ interface CommandSearchModalProps {
   deployments: Deployment[];
 }
 
-export function CommandSearchModal({ isOpen, onClose, projects, deployments }: CommandSearchModalProps) {
+export function CommandSearchModal({
+  isOpen,
+  onClose,
+  projects,
+  deployments,
+}: CommandSearchModalProps) {
   const [query, setQuery] = useState('');
   const navigate = useNavigate();
 
@@ -46,7 +51,10 @@ export function CommandSearchModal({ isOpen, onClose, projects, deployments }: C
 
   return (
     <div className="fixed inset-0 z-50 flex items-start justify-center pt-20 p-4">
-      <div className="fixed inset-0 bg-slate-950/60 backdrop-blur-sm dark:bg-black/75" onClick={onClose} />
+      <div
+        className="fixed inset-0 bg-slate-950/60 backdrop-blur-sm dark:bg-black/75"
+        onClick={onClose}
+      />
       <div className="relative w-full max-w-xl overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-2xl dark:border-slate-800 dark:bg-slate-900">
         <div className="flex items-center border-b border-slate-100 px-4 py-3 dark:border-slate-800">
           <Search size={18} className="text-slate-400 mr-3" />
@@ -58,7 +66,10 @@ export function CommandSearchModal({ isOpen, onClose, projects, deployments }: C
             onChange={(e) => setQuery(e.target.value)}
             className="w-full bg-transparent text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none dark:text-white dark:placeholder:text-slate-500"
           />
-          <button onClick={onClose} className="rounded p-1 text-slate-400 hover:text-slate-700 dark:hover:text-white">
+          <button
+            onClick={onClose}
+            className="rounded p-1 text-slate-400 hover:text-slate-700 dark:hover:text-white"
+          >
             <X size={16} />
           </button>
         </div>
@@ -66,7 +77,9 @@ export function CommandSearchModal({ isOpen, onClose, projects, deployments }: C
         <div className="max-h-80 overflow-y-auto p-2 space-y-3">
           {/* Quick Navigation */}
           <div>
-            <p className="px-3 py-1 text-[11px] font-semibold text-slate-400 uppercase tracking-wider">Pages</p>
+            <p className="px-3 py-1 text-[11px] font-semibold text-slate-400 uppercase tracking-wider">
+              Pages
+            </p>
             <div className="space-y-0.5">
               <button
                 onClick={() => handleSelect('/')}
@@ -114,7 +127,9 @@ export function CommandSearchModal({ isOpen, onClose, projects, deployments }: C
           {/* Projects */}
           {filteredProjects.length > 0 && (
             <div>
-              <p className="px-3 py-1 text-[11px] font-semibold text-slate-400 uppercase tracking-wider">Projects</p>
+              <p className="px-3 py-1 text-[11px] font-semibold text-slate-400 uppercase tracking-wider">
+                Projects
+              </p>
               <div className="space-y-0.5">
                 {filteredProjects.slice(0, 4).map((p) => (
                   <button
@@ -139,7 +154,9 @@ export function CommandSearchModal({ isOpen, onClose, projects, deployments }: C
           {/* Deployments */}
           {filteredDeployments.length > 0 && (
             <div>
-              <p className="px-3 py-1 text-[11px] font-semibold text-slate-400 uppercase tracking-wider">Deployments</p>
+              <p className="px-3 py-1 text-[11px] font-semibold text-slate-400 uppercase tracking-wider">
+                Deployments
+              </p>
               <div className="space-y-0.5">
                 {filteredDeployments.slice(0, 3).map((d) => (
                   <button
@@ -152,7 +169,9 @@ export function CommandSearchModal({ isOpen, onClose, projects, deployments }: C
                       <span className="font-medium text-slate-900 dark:text-white">{d.project_name}</span>
                       <span className="text-slate-500 dark:text-slate-400 truncate text-[11px] max-w-[180px]">{d.commit_message || 'No commit message'}</span>
                     </div>
-                    <span className="text-[11px] text-emerald-600 dark:text-emerald-400 shrink-0 font-medium">{d.status}</span>
+                    <span className="text-[11px] text-emerald-600 dark:text-emerald-400 shrink-0 font-medium">
+                      {d.status}
+                    </span>
                   </button>
                 ))}
               </div>

@@ -62,9 +62,12 @@ export function TriggerDeployModal({
     if (selectedProj) {
       setRootDirectory(selectedProj.root_directory || './');
       const platformKey = selectedProj.platform || 'vercel';
-      agentApi.getCredentialStatus(platformKey).then((res) => {
-        setTokenSaved(res.exists);
-      }).catch(() => setTokenSaved(false));
+      agentApi
+        .getCredentialStatus(platformKey)
+        .then((res) => {
+          setTokenSaved(res.exists);
+        })
+        .catch(() => setTokenSaved(false));
     }
   }, [projectId, selectedProj]);
 
@@ -132,7 +135,9 @@ export function TriggerDeployModal({
         )}
         {/* Target Project Dropdown */}
         <div>
-          <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300">Target Project</label>
+          <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300">
+            Target Project
+          </label>
           <select
             value={projectId}
             onChange={(e) => setProjectId(e.target.value)}
@@ -200,7 +205,9 @@ export function TriggerDeployModal({
         {/* Environment & Branch */}
         <div className="grid gap-3 sm:grid-cols-2">
           <div>
-            <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300">Environment</label>
+            <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300">
+              Environment
+            </label>
             <select
               value={environment}
               onChange={(e) => setEnvironment(e.target.value)}
@@ -213,9 +220,14 @@ export function TriggerDeployModal({
           </div>
 
           <div>
-            <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300">Branch</label>
+            <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300">
+              Branch
+            </label>
             <div className="relative mt-1">
-              <GitBranch size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+              <GitBranch
+                size={14}
+                className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"
+              />
               <input
                 type="text"
                 value={branch}
@@ -228,7 +240,9 @@ export function TriggerDeployModal({
 
         {/* Note */}
         <div>
-          <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300">Deployment Note</label>
+          <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300">
+            Deployment Note
+          </label>
           <div className="relative mt-1">
             <MessageSquare size={14} className="absolute left-3 top-3 text-slate-400" />
             <textarea
