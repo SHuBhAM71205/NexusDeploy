@@ -56,14 +56,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           const currentUser = await api.getMe();
           setUser(currentUser);
         } catch {
-          // Token invalid or offline fallback
-          setUser({
-            id: 'usr-1',
-            email: 'admin@nexusdeploy.io',
-            username: 'jane_doe',
-            full_name: 'Jane Doe',
-            role: 'Lead Architect',
-          });
+          localStorage.removeItem('nexus_token');
+          setToken(null);
+          setUser(null);
+          setIsAuthModalOpen(true);
         }
       } else {
         // Unauthenticated default
@@ -97,22 +93,20 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const register = async (data: RegisterData) => {
-    setIsLoading(true);
-    try {
-      const res = await api.register(data);
-      sessionStorage.setItem('nexus_token', res.access_token);
-      setToken(res.access_token);
-      if (res.user) {
-        setUser(res.user);
-      } else {
-        const currentUser = await api.getMe();
-        setUser(currentUser);
-      }
-      closeAuthModal();
-    } finally {
-      setIsLoading(false);
-    }
-  };
+  setIsLoading(true);
+
+  try {
+    await api.register(data);
+
+    // Registration creates the account.
+    // The user must log in separately to receive a JWT.
+    localStorage.removeItem('nexus_token');
+    setToken(null);
+    setUser(null);
+  } finally {
+    setIsLoading(false);
+  }
+};
 
   const logout = async () => {
     setIsLoading(true);

@@ -18,13 +18,13 @@ import { RollbackModal } from '../../components/ui/RollbackModal';
 import { NewProjectModal } from '../../components/ui/NewProjectModal';
 import { TriggerDeployModal } from '../../components/ui/TriggerDeployModal';
 import { api } from '../../services/api';
-import type { DashboardStats, Deployment, Project, ActivityItem } from '../../types';
+import type { Deployment, Project } from '../../types';
 
 export function DashboardPage() {
-  const [stats, setStats] = useState<DashboardStats | null>(null);
   const [deployments, setDeployments] = useState<Deployment[]>([]);
   const [projects, setProjects] = useState<Project[]>([]);
-  const [activities, setActivities] = useState<ActivityItem[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [selectedDeployment, setSelectedDeployment] = useState<Deployment | null>(null);
   const [rollbackDeployment, setRollbackDeployment] = useState<Deployment | null>(null);
   const [isNewProjectOpen, setIsNewProjectOpen] = useState(false);
@@ -32,19 +32,15 @@ export function DashboardPage() {
   const [filterStatus, setFilterStatus] = useState<string>('all');
 
   const loadDashboardData = async () => {
+    setLoadError(null);
     try {
-      const [s, d, p, a] = await Promise.all([
-        api.getStats(),
-        api.getDeployments(),
-        api.getProjects(),
-        api.getActivities(),
-      ]);
-      setStats(s);
+      const [d, p] = await Promise.all([api.getDeployments(), api.getProjects()]);
       setDeployments(d);
       setProjects(p);
-      setActivities(a);
-    } catch {
-      // Handled by client
+    } catch (error) {
+      setLoadError(error instanceof Error ? error.message : 'Unable to load project and deployment data.');
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -62,32 +58,17 @@ export function DashboardPage() {
         target_environment: rollbackDeployment.environment,
       });
       loadDashboardData();
-    } catch {
-      // Handled
+    } catch (error) {
+      setLoadError(error instanceof Error ? error.message : 'Unable to roll back deployment.');
     }
   };
 
-  const handleCreateProject = async (data: Partial<Project>) => {
-    try {
-      await api.createProject(data);
-      loadDashboardData();
-    } catch {
-      // Handled
-    }
+  const handleCreateProject = async (data: Partial<Project>): Promise<Project> => {
+    return api.createProject(data);
   };
 
-  const handleTriggerDeploy = async (data: {
-    project_id: string;
-    environment: string;
-    branch: string;
-    commit_message: string;
-  }) => {
-    try {
-      await api.triggerDeployment(data);
-      loadDashboardData();
-    } catch {
-      // Handled
-    }
+  const handleTriggerDeploy = async (data: { project_id: string; environment: string; branch: string; commit_message: string }) => {
+    return api.triggerDeployment(data);
   };
 
   const filteredDeployments = deployments.filter((d) => {
@@ -97,25 +78,25 @@ export function DashboardPage() {
 
   const statCards = [
     {
-      label: stats?.active_projects.label || 'Active projects',
-      value: stats?.active_projects.value || '12',
-      detail: stats?.active_projects.detail || '+2 this month',
+      label: 'Projects',
+      value: loadError ? 'Unavailable' : isLoading ? 'Loading' : String(projects.length),
+      detail: 'PostgreSQL project records',
       icon: Rocket,
       accent:
         'text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-500/10 border-indigo-200 dark:border-indigo-500/20',
     },
     {
-      label: stats?.successful_deploys.label || 'Successful deploys',
-      value: stats?.successful_deploys.value || '98.6%',
-      detail: stats?.successful_deploys.detail || 'Last 30 days',
+      label: 'Successful deployments',
+      value: loadError ? 'Unavailable' : isLoading ? 'Loading' : String(deployments.filter((deployment) => deployment.status === 'success').length),
+      detail: 'Recorded deployment records',
       icon: CheckCircle2,
       accent:
         'text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-500/10 border-emerald-200 dark:border-emerald-500/20',
     },
     {
-      label: stats?.avg_build_time.label || 'Average build time',
-      value: stats?.avg_build_time.value || '1m 42s',
-      detail: stats?.avg_build_time.detail || '14% faster',
+      label: 'Average build time',
+      value: 'Unavailable',
+      detail: 'Not provided by the deployment API',
       icon: Clock3,
       accent:
         'text-sky-600 dark:text-sky-400 bg-sky-50 dark:bg-sky-500/10 border-sky-200 dark:border-sky-500/20',
@@ -130,7 +111,7 @@ export function DashboardPage() {
           <div className="flex items-center gap-2">
             <span className="flex size-2 rounded-full bg-emerald-500" />
             <p className="text-xs font-semibold uppercase tracking-wider text-indigo-600 dark:text-indigo-400">
-              Cloud Region us-east-1 • Live Production
+              Project and deployment overview
             </p>
           </div>
           <h1 className="mt-1 text-2xl sm:text-3xl font-bold tracking-tight text-slate-900 dark:text-white">
@@ -191,6 +172,12 @@ export function DashboardPage() {
       <ClusterHealthCard />
 
       {/* Deployments & Active Workspaces */}
+      {loadError && (
+        <div role="alert" className="rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-xs text-rose-700 dark:border-rose-900 dark:bg-rose-950/40 dark:text-rose-300">
+          Project and deployment data could not be loaded: {loadError}
+          <button type="button" onClick={loadDashboardData} className="ml-3 underline">Retry</button>
+        </div>
+      )}
       <div className="grid gap-8 lg:grid-cols-[1fr_22rem]">
         {/* Left: Recent Deployments Table */}
         <Card variant="glass" className="overflow-hidden">
@@ -206,7 +193,7 @@ export function DashboardPage() {
 
             {/* Filter Tabs */}
             <div className="flex rounded-xl bg-slate-100 p-1 border border-slate-200/80 dark:bg-slate-900/90 dark:border-slate-800">
-              {['all', 'success', 'building', 'failed'].map((st) => (
+              {['all', 'started', 'running', 'success', 'failed'].map((st) => (
                 <button
                   key={st}
                   type="button"
@@ -236,7 +223,13 @@ export function DashboardPage() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 dark:divide-slate-800/50">
-                {filteredDeployments.slice(0, 8).map((dep) => (
+                {isLoading ? (
+                  <tr><td colSpan={6} className="py-8 text-center text-xs text-slate-400">Loading deployments...</td></tr>
+                ) : loadError ? (
+                  <tr><td colSpan={6} className="py-8 text-center text-xs text-slate-400">Deployment data unavailable.</td></tr>
+                ) : filteredDeployments.length === 0 ? (
+                  <tr><td colSpan={6} className="py-8 text-center text-xs text-slate-400">No deployments available.</td></tr>
+                ) : filteredDeployments.slice(0, 8).map((dep) => (
                   <tr
                     key={dep.id}
                     className="hover:bg-slate-50/80 transition-colors group cursor-pointer dark:hover:bg-slate-800/30"
@@ -267,23 +260,17 @@ export function DashboardPage() {
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-2">
                         <span className="rounded bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 font-mono text-[10px] text-indigo-700 dark:text-indigo-300 font-semibold">
-                          {dep.commit_hash}
+                          {dep.commit_hash || 'No commit hash'}
                         </span>
-                        <span className="text-slate-500 dark:text-slate-400 text-[11px]">
-                          ({dep.branch})
-                        </span>
+                        <span className="text-slate-500 dark:text-slate-400 text-[11px]">({dep.branch})</span>
                       </div>
                       <p className="text-[11px] text-slate-500 dark:text-slate-400 truncate max-w-[200px] mt-0.5">
-                        {dep.commit_message}
+                        {dep.commit_message || 'No commit message'}
                       </p>
                     </td>
                     <td className="px-6 py-4 text-slate-500 dark:text-slate-400 font-mono">
-                      <div>{dep.started_at}</div>
-                      {dep.duration && (
-                        <div className="text-[10px] text-slate-400 dark:text-slate-500">
-                          {dep.duration}
-                        </div>
-                      )}
+                      <div>{dep.started_at ? new Date(dep.started_at).toLocaleString() : 'Unavailable'}</div>
+                      {dep.duration && <div className="text-[10px] text-slate-400 dark:text-slate-500">{dep.duration}</div>}
                     </td>
                     <td className="px-6 py-4">
                       <StatusBadge status={dep.status} />
@@ -302,7 +289,7 @@ export function DashboardPage() {
                           <Terminal size={12} />
                           <span>Logs</span>
                         </button>
-                        {dep.status === 'Success' && (
+                        {dep.status === 'success' && (
                           <button
                             type="button"
                             onClick={() => setRollbackDeployment(dep)}
@@ -332,20 +319,24 @@ export function DashboardPage() {
               </span>
             </div>
             <div className="mt-3 space-y-2.5">
-              {projects.slice(0, 4).map((p) => (
+              {isLoading ? (
+                <p className="py-3 text-xs text-slate-500">Loading projects...</p>
+              ) : loadError ? (
+                <p className="py-3 text-xs text-slate-500">Project data unavailable.</p>
+              ) : projects.length === 0 ? (
+                <p className="py-3 text-xs text-slate-500">No projects yet.</p>
+              ) : projects.slice(0, 4).map((p) => (
                 <div
                   key={p.id}
                   className="flex items-center justify-between rounded-xl border border-slate-100 bg-slate-50/70 p-2.5 dark:border-slate-800/80 dark:bg-slate-950/60"
                 >
                   <div>
                     <p className="text-xs font-semibold text-slate-900 dark:text-white">{p.name}</p>
-                    <p className="text-[10px] text-slate-500 dark:text-slate-400 font-mono">
-                      {p.framework}
-                    </p>
+                    <p className="text-[10px] text-slate-500 dark:text-slate-400 font-mono">{p.framework || 'Framework unavailable'}</p>
                   </div>
                   <div className="text-right">
-                    <span className="inline-flex items-center gap-1 text-[10px] font-medium text-emerald-600 dark:text-emerald-400">
-                      <span className="size-1.5 rounded-full bg-emerald-500" /> Live
+                      <span className="inline-flex items-center gap-1 text-[10px] font-medium text-slate-600 dark:text-slate-300">
+                      {p.status}
                     </span>
                     <p className="text-[10px] text-slate-400 dark:text-slate-500 font-mono">
                       {p.total_deploys} deploys
@@ -363,23 +354,7 @@ export function DashboardPage() {
               <Activity size={16} className="text-slate-400 dark:text-slate-500" />
             </div>
             <div className="mt-3 space-y-3">
-              {activities.slice(0, 5).map((act) => (
-                <div key={act.id} className="relative flex gap-3 text-xs">
-                  <div className="mt-1 size-2 rounded-full bg-indigo-500 shrink-0" />
-                  <div className="flex-1">
-                    <p className="font-medium text-slate-800 dark:text-slate-200">{act.action}</p>
-                    <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
-                      <span className="text-indigo-600 dark:text-indigo-400 font-mono font-medium">
-                        {act.project_name}
-                      </span>{' '}
-                      • {act.user_name}
-                    </p>
-                    <p className="text-[10px] text-slate-400 dark:text-slate-500 mt-0.5">
-                      {act.timestamp}
-                    </p>
-                  </div>
-                </div>
-              ))}
+              <p className="py-3 text-xs text-slate-500 dark:text-slate-400">Activity history is unavailable from the PostgreSQL project/deployment API.</p>
             </div>
           </Card>
         </div>
@@ -404,6 +379,7 @@ export function DashboardPage() {
         isOpen={isNewProjectOpen}
         onClose={() => setIsNewProjectOpen(false)}
         onSubmit={handleCreateProject}
+        onRefresh={loadDashboardData}
       />
 
       {/* Trigger Deploy Modal */}
@@ -412,6 +388,7 @@ export function DashboardPage() {
         onClose={() => setIsTriggerDeployOpen(false)}
         projects={projects}
         onSubmit={handleTriggerDeploy}
+        onRefresh={loadDashboardData}
       />
     </div>
   );

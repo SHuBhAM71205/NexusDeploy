@@ -13,31 +13,33 @@ export interface EnvVar {
   value: string;
   target?: 'all' | 'production' | 'staging' | 'preview';
   is_secret?: boolean;
+  id?: string;
 }
 
 export interface Project {
   id: string;
   name: string;
-  description?: string;
-  repo_url: string;
+  description: string | null;
+  repo_url: string | null;
   branch: string;
-  framework: string;
+  framework: string | null;
   root_directory: string;
-  build_command: string;
-  output_directory: string;
-  install_command: string;
-  node_version: string;
-  status: 'active' | 'building' | 'failed' | 'paused';
-  created_at: string;
-  updated_at: string;
-  last_deployed_at?: string;
-  production_url?: string;
-  staging_url?: string;
+  build_command: string | null;
+  output_directory: string | null;
+  install_command: string | null;
+  node_version: string | null;
+  status: string;
+  created_at: string | null;
+  updated_at: string | null;
+  last_deployed_at: string | null;
+  production_url: string | null;
+  staging_url: string | null;
   total_deploys: number;
   active_deployments_count: number;
-  platform?: string;
+  platform: string | null;
   domains: string[];
   environment_variables: EnvVar[];
+  owner_id: string | null;
 }
 
 export interface LogLine {
@@ -50,19 +52,23 @@ export interface Deployment {
   id: string;
   project_id: string;
   project_name: string;
-  environment: 'production' | 'staging' | 'preview';
-  status: 'Success' | 'Building' | 'Failed' | 'Queued' | 'Rolled Back';
-  branch: string;
-  commit_hash: string;
-  commit_message: string;
-  author: string;
-  started_at: string;
-  completed_at?: string | null;
-  duration?: string;
-  url?: string;
+  environment: string;
+  status: 'started' | 'running' | 'success' | 'failed';
+  branch: string | null;
+  commit_hash: string | null;
+  commit_message: string | null;
+  author: string | null;
+  started_at: string | null;
+  completed_at: string | null;
+  duration: string | null;
+  url: string | null;
   logs_count: number;
-  trigger_type: 'manual' | 'git_push' | 'webhook' | 'rollback';
+  trigger_type: string | null;
+  provider: string | null;
+  error: string | null;
+  provider_metadata: Record<string, unknown> | null;
   logs?: LogLine[];
+  build_metrics?: Record<string, unknown> | null;
 }
 
 export interface StatMetric {
@@ -90,6 +96,25 @@ export interface DashboardStats {
   bandwidth_usage: StatMetric;
   total_deployments_today: number;
   cluster_health: ClusterHealth;
+}
+
+export interface MonitoringProviderMetrics {
+  started_total: number;
+  successful_total: number;
+  failed_total: number;
+  duration_observations: number;
+  average_duration_seconds: number | null;
+}
+
+export interface MonitoringSummary {
+  updated_at: string;
+  requests: {
+    total: number;
+    server_errors_total: number;
+  };
+  deployments: MonitoringProviderMetrics & {
+    providers: Record<string, MonitoringProviderMetrics>;
+  };
 }
 
 export interface ActivityItem {

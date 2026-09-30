@@ -86,19 +86,260 @@ Current and planned features include:
 
 ```
 NexusDeploy/
-
-├── backend/
-├── frontend/
+├── .agent/                                # Repository-specific agent instructions and workflows
+│   ├── rules/
+│   │   └── superpowers.md
+│   ├── skills/
+│   │   ├── superpowers-brainstorm/SKILL.md
+│   │   ├── superpowers-debug/SKILL.md
+│   │   ├── superpowers-finish/SKILL.md
+│   │   ├── superpowers-plan/SKILL.md
+│   │   ├── superpowers-python-automation/SKILL.md
+│   │   ├── superpowers-rest-automation/SKILL.md
+│   │   ├── superpowers-review/SKILL.md
+│   │   ├── superpowers-tdd/SKILL.md
+│   │   └── superpowers-workflow/
+│   │       ├── SKILL.md
+│   │       └── scripts/
+│   │           ├── record_activation.py
+│   │           ├── spawn_subagent.py
+│   │           └── write_artifact.py
+│   └── workflows/
+│       ├── superpowers-brainstorm.md
+│       ├── superpowers-debug.md
+│       ├── superpowers-execute-plan-parallel.md
+│       ├── superpowers-execute-plan.md
+│       ├── superpowers-finish.md
+│       ├── superpowers-reload.md
+│       ├── superpowers-review.md
+│       └── superpowers-write-plan.md
+├── .github/                               # GitHub ownership, issue templates, and CI workflows
+│   ├── CODEOWNERS
+│   ├── ISSUE_TEMPLATE/
+│   │   ├── bug_report.yml
+│   │   ├── config.yml
+│   │   ├── docs_report.yml
+│   │   ├── feature_request.yml
+│   │   └── perfomance.yml
+│   ├── pull_request_template.md
+│   └── workflows/
+│       ├── ci.yml
+│       └── frontend-ci.yml
+├── .idea/                                 # IntelliJ IDEA project configuration
+│   ├── .gitignore
+│   ├── inspectionProfiles/profiles_settings.xml
+│   ├── modules.xml
+│   ├── NexusDeploy.iml
+│   ├── nexusdeploy-backend.iml
+│   ├── prettier.xml
+│   └── vcs.xml
+├── agent/                                 # Nested Node.js host-agent repository
+│   ├── .github/workflows/ci-cd.yml
+│   ├── .gitignore
+│   ├── .vercel/
+│   │   ├── project.json
+│   │   └── README.txt
+│   ├── docker-compose.yml
+│   ├── Dockerfile
+│   ├── index.js                           # Agent API and deployment orchestration
+│   ├── k8s/
+│   │   ├── deployment.yml
+│   │   └── service.yml
+│   ├── monitoring/prometheus.yml
+│   ├── package.json
+│   ├── package-lock.json
+│   ├── projects.json
+│   └── services/
+│       ├── bootstrapper.js
+│       ├── deployer.js
+│       ├── detector.js
+│       ├── git.js
+│       ├── keychain.js
+│       ├── logbridge.js
+│       └── projects.js
+├── artifacts/superpowers/                 # Project planning and execution notes
+│   ├── brainstorm.md
+│   ├── execution.md
+│   ├── finish.md
+│   └── plan.md
+├── backend/                               # FastAPI application and supporting services
+│   ├── .dockerignore
+│   ├── .env                               # Local environment settings; do not commit secrets
+│   ├── .python-version
+│   ├── alembic.ini
+│   ├── app/
+│   │   ├── __init__.py
+│   │   ├── api/
+│   │   │   ├── controllers/
+│   │   │   │   ├── __init__.py
+│   │   │   │   └── auth_controller.py
+│   │   │   ├── dependencies/.gitkeep
+│   │   │   ├── middleware/
+│   │   │   │   ├── jwt.py
+│   │   │   │   ├── limiter.py
+│   │   │   │   └── redis_cache.py
+│   │   │   ├── models/auth_model.py
+│   │   │   ├── routes/
+│   │   │   │   ├── __init__.py
+│   │   │   │   ├── activities.py
+│   │   │   │   ├── auth.py
+│   │   │   │   ├── deployments.py
+│   │   │   │   ├── health.py
+│   │   │   │   ├── projects.py
+│   │   │   │   ├── settings.py
+│   │   │   │   └── stats.py
+│   │   │   └── services/
+│   │   │       ├── auth_services.py
+│   │   │       └── user_services.py
+│   │   ├── core/
+│   │   │   ├── celery.py
+│   │   │   ├── config.py
+│   │   │   ├── logging.py
+│   │   │   ├── reddis.py
+│   │   │   └── security.py
+│   │   ├── db/
+│   │   │   ├── __init__.py
+│   │   │   ├── migrations/
+│   │   │   │   ├── README
+│   │   │   │   ├── env.py
+│   │   │   │   ├── script.py.mako
+│   │   │   │   └── versions/
+│   │   │   │       ├── 5ebebf6ef3d5_initial_migration.py
+│   │   │   │       ├── 74d1b57c5899_initial_migration.py
+│   │   │   │       ├── 7ab37ca9d1af_initial_migration.py
+│   │   │   │       └── d2bc5540dcb3_initial_migration.py
+│   │   │   ├── models/
+│   │   │   │   ├── __init__.py
+│   │   │   │   ├── Base.py
+│   │   │   │   ├── RefreshToken.py
+│   │   │   │   └── User.py
+│   │   │   ├── session.py
+│   │   │   └── store.py
+│   │   ├── integrations/
+│   │   │   ├── github/.gitkeep
+│   │   │   ├── minio/.gitkeep
+│   │   │   ├── qdrant/.gitkeep
+│   │   │   └── render/.gitkeep
+│   │   ├── main.py                       # FastAPI application entry point
+│   │   ├── schemas/
+│   │   │   ├── activity.py
+│   │   │   ├── deployment.py
+│   │   │   ├── project.py
+│   │   │   └── stats.py
+│   │   ├── services/
+│   │   │   ├── ai/.gitkeep
+│   │   │   ├── auth/.gitkeep
+│   │   │   ├── deployment/.gitkeep
+│   │   │   ├── github/.gitkeep
+│   │   │   └── providers/.gitkeep
+│   │   └── utils/.gitkeep
+│   ├── docker-compose.yml
+│   ├── Dockerfile
+│   ├── eg.env.example
+│   ├── monitoring/
+│   │   ├── grafana-dashboards.yml
+│   │   ├── grafana-datasource.yml
+│   │   ├── loki-config.yml
+│   │   └── promtail-config.yml
+│   ├── pyproject.toml
+│   ├── README.md
+│   ├── tests/
+│   │   ├── __init__.py
+│   │   ├── integration/.gitkeep
+│   │   ├── test.py
+│   │   └── unit/test_auth_sessions.py
+│   └── uv.lock
 ├── docs/
-│   ├── adr/
-│   ├── api/
-│   └── architecture/
-├── scripts/
-├── .github/
+│   ├── api/api_docs.md
+│   ├── architecture/
+│   │   ├── Activity_diag.svg
+│   │   ├── arch.png
+│   │   ├── Component_diagram.svg
+│   │   ├── DFD lev 2.svg
+│   │   ├── DFD_deployment_lev2.svg
+│   │   ├── DFD_level1.svg
+│   │   ├── DFD_monitoring.svg
+│   │   ├── Nexus_ER.png
+│   │   ├── sequence.svg
+│   │   ├── sstate.png
+│   │   └── Use Case diagram.svg
+│   └── src/
+│       ├── activity.wsd
+│       ├── arch.wsd
+│       ├── class_diagram.wsd
+│       ├── DFD_s_diag.wsd
+│       ├── e.wsd
+│       ├── sequence.uwd
+│       └── state_diag.wsd
+├── frontend/                              # React, TypeScript, and Vite web application
+│   ├── .gitignore
+│   ├── .prettierignore
+│   ├── .prettierrc.json
+│   ├── Dockerfile
+│   ├── eslint.config.js
+│   ├── index.html
+│   ├── nginx.conf
+│   ├── package.json
+│   ├── package-lock.json
+│   ├── README.md
+│   ├── src/
+│   │   ├── app/App.tsx
+│   │   ├── components/
+│   │   │   ├── auth/AuthModal.tsx
+│   │   │   ├── dashboard/ClusterHealthCard.tsx
+│   │   │   ├── deployments/DeploymentLogsModal.tsx
+│   │   │   ├── layout/AppShell.tsx
+│   │   │   ├── projects/ProjectSettingsDrawer.tsx
+│   │   │   ├── settings/ApiKeySecretModal.tsx
+│   │   │   └── ui/
+│   │   │       ├── Badge.tsx
+│   │   │       ├── Card.tsx
+│   │   │       ├── CommandSearchModal.tsx
+│   │   │       ├── FolderPickerModal.tsx
+│   │   │       ├── Modal.tsx
+│   │   │       ├── NewProjectModal.tsx
+│   │   │       ├── RollbackModal.tsx
+│   │   │       ├── TerminalLogs.tsx
+│   │   │       ├── TokenPromptModal.tsx
+│   │   │       └── TriggerDeployModal.tsx
+│   │   ├── context/
+│   │   │   ├── AuthContext.tsx
+│   │   │   └── ThemeContext.tsx
+│   │   ├── features/dashboard/
+│   │   │   ├── DashboardPage.test.tsx
+│   │   │   └── DashboardPage.tsx
+│   │   ├── lib/
+│   │   │   ├── env.ts
+│   │   │   └── utils.ts
+│   │   ├── main.tsx
+│   │   ├── pages/
+│   │   │   ├── DeploymentsPage.tsx
+│   │   │   ├── NotFoundPage.tsx
+│   │   │   ├── ProjectsPage.tsx
+│   │   │   └── SettingsPage.tsx
+│   │   ├── services/
+│   │   │   ├── agentApi.ts
+│   │   │   ├── api.ts
+│   │   │   └── http.ts
+│   │   ├── styles/index.css
+│   │   ├── test/setup.ts
+│   │   ├── types/index.ts
+│   │   └── vite-env.d.ts
+│   ├── tsconfig.app.json
+│   ├── tsconfig.json
+│   ├── tsconfig.node.json
+│   └── vite.config.ts
+├── .gitignore
+├── CODE_OF_CONDUCT.md
+├── CONTRIUTING.md
+├── LICENCE.md
 ├── README.md
-├── CONTRIBUTING.md
-└── CODE_OF_CONDUCT.md
+├── run.bat                                # Starts backend, agent, and frontend on Windows
+├── start.bat
+└── start-nexus.bat
 ```
+
+This lists the project's visible source, documentation, and configuration files. Git metadata, installed dependencies, virtual environments, build output, caches, and the compiled agent executable are omitted. The agent directory is also a nested Git repository.
 
 ---
 

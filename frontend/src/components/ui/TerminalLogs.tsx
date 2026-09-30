@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Terminal, Copy, Check, Search, ShieldCheck, Cpu, HardDrive } from 'lucide-react';
+import { Terminal, Copy, Check, Search } from 'lucide-react';
 import type { LogLine, Deployment } from '../../types';
 import { StatusBadge, EnvironmentBadge } from './Badge';
 
@@ -13,34 +13,7 @@ export function TerminalLogs({ deployment, onRollback }: TerminalLogsProps) {
   const [copied, setCopied] = useState(false);
   const [activeTab, setActiveTab] = useState<'logs' | 'overview'>('logs');
 
-  const logs: LogLine[] = deployment.logs || [
-    {
-      timestamp: '14:40:02',
-      level: 'info',
-      message: `Initializing deployment ${deployment.id}...`,
-    },
-    {
-      timestamp: '14:40:05',
-      level: 'info',
-      message: `Git ref ${deployment.branch} (${deployment.commit_hash}) - "${deployment.commit_message}"`,
-    },
-    { timestamp: '14:40:12', level: 'info', message: 'Restoring cache for build dependencies...' },
-    {
-      timestamp: '14:40:20',
-      level: 'info',
-      message: 'Executing compilation and production bundling pipeline...',
-    },
-    {
-      timestamp: '14:40:45',
-      level: 'info',
-      message: 'Building lightweight container and validating TLS certs...',
-    },
-    {
-      timestamp: '14:41:00',
-      level: 'success',
-      message: `Deployment live at ${deployment.url || 'https://app.nexusdeploy.app'}`,
-    },
-  ];
+  const logs: LogLine[] = deployment.logs || [];
 
   const filteredLogs = logs.filter(
     (l) =>
@@ -88,17 +61,13 @@ export function TerminalLogs({ deployment, onRollback }: TerminalLogsProps) {
               <EnvironmentBadge env={deployment.environment} />
             </div>
             <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400 font-mono">
-              commit{' '}
-              <span className="text-indigo-600 dark:text-indigo-400 font-medium">
-                {deployment.commit_hash}
-              </span>{' '}
-              • {deployment.commit_message}
+              commit <span className="text-indigo-600 dark:text-indigo-400 font-medium">{deployment.commit_hash || 'Unavailable'}</span> • {deployment.commit_message || 'No commit message'}
             </p>
           </div>
         </div>
 
         <div className="flex items-center gap-2">
-          {onRollback && deployment.status === 'Success' && (
+          {onRollback && deployment.status === 'success' && (
             <button
               type="button"
               onClick={() => onRollback(deployment.id)}
@@ -181,7 +150,7 @@ export function TerminalLogs({ deployment, onRollback }: TerminalLogsProps) {
           <div className="space-y-1.5">
             {filteredLogs.length === 0 ? (
               <p className="text-slate-500 italic py-4 text-center">
-                No log lines matching "{search}"
+                {logs.length === 0 ? 'No deployment logs are available.' : `No log lines matching "${search}"`}
               </p>
             ) : (
               filteredLogs.map((line, idx) => (
@@ -210,44 +179,9 @@ export function TerminalLogs({ deployment, onRollback }: TerminalLogsProps) {
           </div>
         </div>
       ) : (
-        <div className="grid gap-3 sm:grid-cols-3">
-          <div className="rounded-xl border border-slate-200 bg-slate-50 p-4 dark:border-slate-800 dark:bg-slate-950/60">
-            <div className="flex items-center gap-2 text-slate-500 dark:text-slate-400">
-              <Cpu size={16} className="text-indigo-600 dark:text-indigo-400" />
-              <span className="text-xs font-semibold">Compute Allocation</span>
-            </div>
-            <p className="mt-2 text-lg font-bold text-slate-900 dark:text-white">
-              0.5 vCPU / 512 MB
-            </p>
-            <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-1">
-              Edge Serverless Pod
-            </p>
-          </div>
-          <div className="rounded-xl border border-slate-200 bg-slate-50 p-4 dark:border-slate-800 dark:bg-slate-950/60">
-            <div className="flex items-center gap-2 text-slate-500 dark:text-slate-400">
-              <HardDrive size={16} className="text-emerald-600 dark:text-emerald-400" />
-              <span className="text-xs font-semibold">Bundle Size</span>
-            </div>
-            <p className="mt-2 text-lg font-bold text-slate-900 dark:text-white">
-              4.82 MB (Gzip: 1.2 MB)
-            </p>
-            <p className="text-[11px] text-emerald-600 dark:text-emerald-400 mt-1 font-medium">
-              ✓ Optimized tree-shaking
-            </p>
-          </div>
-          <div className="rounded-xl border border-slate-200 bg-slate-50 p-4 dark:border-slate-800 dark:bg-slate-950/60">
-            <div className="flex items-center gap-2 text-slate-500 dark:text-slate-400">
-              <ShieldCheck size={16} className="text-sky-600 dark:text-sky-400" />
-              <span className="text-xs font-semibold">Security Scan</span>
-            </div>
-            <p className="mt-2 text-lg font-bold text-slate-900 dark:text-white">
-              0 Vulnerabilities
-            </p>
-            <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-1">
-              Scanned 142 packages
-            </p>
-          </div>
-        </div>
+        <p className="rounded-xl border border-slate-200 bg-slate-50 p-6 text-center text-xs text-slate-500 dark:border-slate-800 dark:bg-slate-950/60">
+          Build and runtime metrics are unavailable for this deployment.
+        </p>
       )}
     </div>
   );

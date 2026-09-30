@@ -1,0 +1,25 @@
+# M8.1 — NexusDeploy monitoring infrastructure foundation.
+# M8.2 — Added FastAPI backend scraping for real application metrics
+
+global:
+  scrape_interval: 30s          # conservative for local dev
+  scrape_timeout: 10s
+  evaluation_interval: 30s
+
+scrape_configs:
+  - job_name: prometheus
+    static_configs:
+      - targets: ["localhost:9090"]
+
+  - job_name: loki
+    static_configs:
+      - targets: ["loki:3100"]
+
+  - job_name: grafana
+    static_configs:
+      - targets: ["grafana:3000"]
+
+  - job_name: nexusdeploy-backend
+    static_configs:
+      - targets: ["nexus-backend:8000"]
+    metrics_path: "/metrics"

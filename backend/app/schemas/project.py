@@ -11,14 +11,15 @@ class EnvVar(BaseModel):
 class ProjectBase(BaseModel):
     name: str
     description: Optional[str] = None
-    repo_url: str
+    repo_url: Optional[str] = None
     branch: str = "main"
-    framework: str = "React"
+    framework: Optional[str] = "React"
+    platform: Optional[str] = None
     root_directory: str = "./"
-    build_command: str = "npm run build"
-    output_directory: str = "dist"
-    install_command: str = "npm install"
-    node_version: str = "20.x"
+    build_command: Optional[str] = "npm run build"
+    output_directory: Optional[str] = "dist"
+    install_command: Optional[str] = "npm install"
+    node_version: Optional[str] = "20.x"
 
 class ProjectCreate(ProjectBase):
     environment_variables: Optional[List[EnvVar]] = []
@@ -29,15 +30,18 @@ class ProjectUpdate(BaseModel):
     repo_url: Optional[str] = None
     branch: Optional[str] = None
     framework: Optional[str] = None
+    platform: Optional[str] = None
     build_command: Optional[str] = None
     output_directory: Optional[str] = None
     install_command: Optional[str] = None
+    node_version: Optional[str] = None
+    root_directory: Optional[str] = None
 
 class ProjectResponse(ProjectBase):
     id: str
-    status: str = "active"  # active, paused, failed, building
-    created_at: str
-    updated_at: str
+    status: str = "active"
+    created_at: Optional[str] = None
+    updated_at: Optional[str] = None
     last_deployed_at: Optional[str] = None
     production_url: Optional[str] = None
     staging_url: Optional[str] = None
@@ -45,3 +49,4 @@ class ProjectResponse(ProjectBase):
     active_deployments_count: int = 0
     domains: List[str] = []
     environment_variables: List[EnvVar] = []
+    owner_id: Optional[str] = None

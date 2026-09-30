@@ -41,38 +41,56 @@ export function AppShell() {
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
+  const [loadError, setLoadError] = useState<string | null>(null);
 
   const { theme, setTheme } = useTheme();
-  const { user, openAuthModal, logout } = useAuth();
+  const {
+    user,
+    openAuthModal,
+    logout,
+    isAuthenticated,
+    isLoading: isAuthLoading,
+  } = useAuth();
 
   const loadData = async () => {
+    setLoadError(null);
     try {
       const [projs, deps] = await Promise.all([api.getProjects(), api.getDeployments()]);
       setProjects(projs);
       setDeployments(deps);
-    } catch {
-      // Handled by service fallbacks
+    } catch (error) {
+      setLoadError(error instanceof Error ? error.message : 'Unable to load project and deployment data.');
     }
   };
 
   useEffect(() => {
+    if (isAuthLoading) return;
+    if (!isAuthenticated) {
+      setProjects([]);
+      setDeployments([]);
+      openAuthModal();
+      return;
+    }
+
     loadData();
     const interval = setInterval(loadData, 15000);
     return () => clearInterval(interval);
-  }, []);
+  }, [isAuthenticated, isAuthLoading, openAuthModal]);
 
   const notify = (msg: string) => {
     setToastMessage(msg);
     setTimeout(() => setToastMessage(null), 3500);
   };
 
-  const handleCreateProject = async (data: Partial<Project>) => {
+  const handleCreateProject = async (data: Partial<Project>): Promise<Project> => {
     try {
       const created = await api.createProject(data);
-      notify(`Project "${created.name}" deployed successfully!`);
+      notify(`Project "${created.name}" created.`);
       loadData();
+      return created;
     } catch {
       notify('Failed to create project');
+      throw new Error('Failed to create project');
     }
   };
 
@@ -83,11 +101,12 @@ export function AppShell() {
     commit_message: string;
   }) => {
     try {
-      const dep = await api.triggerDeployment(data);
-      notify(`Deployment ${dep.id} triggered for ${dep.project_name}!`);
-      loadData();
+      const job = await api.triggerDeployment(data);
+      notify(`Deployment job ${job.jobId} started.`);
+      return job;
     } catch {
       notify('Failed to trigger deployment');
+      throw new Error('Failed to trigger deployment');
     }
   };
 
@@ -158,9 +177,9 @@ export function AppShell() {
                     {projects.length}
                   </span>
                 )}
-                {label === 'Deployments' && (
+                {label === 'Deployments' && deployments.filter((deployment) => deployment.status === 'started' || deployment.status === 'running').length > 0 && (
                   <span className="rounded-full bg-indigo-100 px-2 py-0.5 text-[10px] font-semibold text-indigo-700 dark:bg-indigo-500/20 dark:text-indigo-300">
-                    Live
+                    {deployments.filter((deployment) => deployment.status === 'started' || deployment.status === 'running').length}
                   </span>
                 )}
               </NavLink>
@@ -298,30 +317,7 @@ export function AppShell() {
                       Mark all read
                     </span>
                   </div>
-                  <div className="mt-2 space-y-2 text-xs">
-                    <div className="rounded-xl bg-slate-50 p-2.5 border border-slate-100 dark:bg-slate-950/60 dark:border-slate-800">
-                      <div className="flex items-center justify-between text-slate-700 dark:text-slate-300">
-                        <span className="font-semibold text-emerald-600 dark:text-emerald-400">
-                          Deploy Succeeded
-                        </span>
-                        <span className="text-[10px] text-slate-400">2m ago</span>
-                      </div>
-                      <p className="mt-0.5 text-slate-500 dark:text-slate-400 text-[11px]">
-                        api-gateway (main) is live on production edge.
-                      </p>
-                    </div>
-                    <div className="rounded-xl bg-slate-50 p-2.5 border border-slate-100 dark:bg-slate-950/60 dark:border-slate-800">
-                      <div className="flex items-center justify-between text-slate-700 dark:text-slate-300">
-                        <span className="font-semibold text-amber-600 dark:text-amber-300">
-                          Build in progress
-                        </span>
-                        <span className="text-[10px] text-slate-400">18m ago</span>
-                      </div>
-                      <p className="mt-0.5 text-slate-500 dark:text-slate-400 text-[11px]">
-                        web-dashboard PR #42 started compiling.
-                      </p>
-                    </div>
-                  </div>
+                  <p className="mt-3 px-2 text-xs text-slate-500 dark:text-slate-400">No notification history is available.</p>
                 </div>
               )}
             </div>
@@ -364,7 +360,19 @@ export function AppShell() {
 
         {/* Page Content */}
         <main className="flex-1 mx-auto w-full max-w-7xl p-4 sm:p-8">
-          <Outlet />
+          {loadError && (
+            <div role="alert" className="mb-4 rounded-lg border border-rose-200 bg-rose-50 px-4 py-3 text-xs text-rose-700 dark:border-rose-900 dark:bg-rose-950/40 dark:text-rose-300">
+              Project and deployment data could not be loaded: {loadError}
+              <button type="button" onClick={loadData} className="ml-3 underline">Retry</button>
+            </div>
+          )}
+          {isAuthLoading ? (
+            <p role="status" className="py-12 text-center text-sm text-slate-500">Checking session...</p>
+          ) : isAuthenticated ? (
+            <Outlet />
+          ) : (
+            <p className="py-12 text-center text-sm text-slate-500">Sign in to load projects and deployments.</p>
+          )}
         </main>
       </div>
 
@@ -373,6 +381,7 @@ export function AppShell() {
         isOpen={isNewProjectOpen}
         onClose={() => setIsNewProjectOpen(false)}
         onSubmit={handleCreateProject}
+        onRefresh={loadData}
       />
 
       <TriggerDeployModal
@@ -380,6 +389,7 @@ export function AppShell() {
         onClose={() => setIsTriggerDeployOpen(false)}
         projects={projects}
         onSubmit={handleTriggerDeploy}
+        onRefresh={loadData}
       />
 
       <CommandSearchModal

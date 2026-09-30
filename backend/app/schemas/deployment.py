@@ -22,17 +22,20 @@ class DeploymentResponse(BaseModel):
     project_id: str
     project_name: str
     environment: str
-    status: str  # Success, Building, Failed, Queued, Rolled Back
-    branch: str
-    commit_hash: str
-    commit_message: str
-    author: str
-    started_at: str
+    status: str
+    branch: Optional[str] = None
+    commit_hash: Optional[str] = None
+    commit_message: Optional[str] = None
+    author: Optional[str] = None
+    started_at: Optional[str] = None
     completed_at: Optional[str] = None
     duration: Optional[str] = None
     url: Optional[str] = None
     logs_count: int = 0
-    trigger_type: str = "manual"
+    trigger_type: Optional[str] = "manual"
+    provider: Optional[str] = None
+    error: Optional[str] = None
+    provider_metadata: Optional[Dict[str, Any]] = None
 
 class DeploymentDetail(DeploymentResponse):
     logs: List[LogLine] = []

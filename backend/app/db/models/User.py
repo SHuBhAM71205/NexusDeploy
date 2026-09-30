@@ -25,6 +25,7 @@ from sqlalchemy.orm import (
 from app.db.models.Base import Base
 
 if TYPE_CHECKING:
+    from app.db.models.Project import Project
     from app.db.models.RefreshToken import RefreshToken
 
 class UserStatus(enum.Enum):
@@ -88,6 +89,11 @@ class User(Base):
     refresh_tokens: Mapped[List["RefreshToken"]] = relationship(
         back_populates="user",
         cascade="all, delete-orphan"
+    )
+
+    projects: Mapped[List["Project"]] = relationship(
+        back_populates="owner",
+        cascade="all, delete-orphan",
     )
     
     profile_pic_url : Mapped[String] = mapped_column(

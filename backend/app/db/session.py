@@ -4,6 +4,7 @@ from app.core.config import settings
 
 engine = create_async_engine(
     settings.POSTGRES_URL, #type:ignore
+    echo=True,
     pool_size=20, 
     max_overflow=5
     

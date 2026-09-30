@@ -100,9 +100,24 @@ class AuthController:
                 password_hash=secure_password_hash
 
             )
+            print("DEBUG HASH:", secure_password_hash)
+            print("DEBUG USER HASH:", new_user.password_hash)
+            print("DEBUG USER STATUS:", new_user.status)
             db.add(new_user)
+
+            print("BEFORE FLUSH HASH:", new_user.password_hash)
+            print("BEFORE FLUSH STATUS:", new_user.status)
+
+            await db.flush()
+
+            print("AFTER FLUSH HASH:", new_user.password_hash)
+            print("AFTER FLUSH STATUS:", new_user.status)
+
             await db.commit()
             await db.refresh(new_user)
+
+            print("AFTER COMMIT HASH:", new_user.password_hash)
+            print("AFTER COMMIT STATUS:", new_user.status)
 
             print(user)
 

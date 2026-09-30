@@ -24,6 +24,8 @@ export function ProjectSettingsDrawer({ project, onClose, onSaved }: ProjectSett
   const [activeTab, setActiveTab] = useState<'general' | 'env'>('general');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
+  const [envLoadError, setEnvLoadError] = useState<string | null>(null);
+  const [isLoadingEnvVars, setIsLoadingEnvVars] = useState(false);
 
   // General fields
   const [name, setName] = useState('');
@@ -40,17 +42,31 @@ export function ProjectSettingsDrawer({ project, onClose, onSaved }: ProjectSett
   const [visibleSecrets, setVisibleSecrets] = useState<Record<number, boolean>>({});
 
   useEffect(() => {
+    let isActive = true;
     if (project) {
       setName(project.name || '');
       setDescription(project.description || '');
-      setBuildCommand(project.build_command || 'npm run build');
-      setInstallCommand(project.install_command || 'npm install');
-      setOutputDirectory(project.output_directory || 'dist');
+      setBuildCommand(project.build_command || '');
+      setInstallCommand(project.install_command || '');
+      setOutputDirectory(project.output_directory || '');
       setRootDirectory(project.root_directory || './');
-      setNodeVersion(project.node_version || '20.x');
+      setNodeVersion(project.node_version || '');
       setBranch(project.branch || 'main');
       setEnvVars(project.environment_variables ? [...project.environment_variables] : []);
+      setIsLoadingEnvVars(true);
+      setEnvLoadError(null);
+      api.getEnvVars(project.id)
+        .then((variables) => {
+          if (isActive) setEnvVars(variables);
+        })
+        .catch((error: unknown) => {
+          if (isActive) setEnvLoadError(error instanceof Error ? error.message : 'Unable to load provider environment variables.');
+        })
+        .finally(() => {
+          if (isActive) setIsLoadingEnvVars(false);
+        });
     }
+    return () => { isActive = false; };
   }, [project]);
 
   if (!project) return null;
@@ -67,11 +83,11 @@ export function ProjectSettingsDrawer({ project, onClose, onSaved }: ProjectSett
       await api.updateProject(project.id, {
         name,
         description,
-        build_command: buildCommand,
-        install_command: installCommand,
-        output_directory: outputDirectory,
+        build_command: buildCommand || null,
+        install_command: installCommand || null,
+        output_directory: outputDirectory || null,
         root_directory: rootDirectory,
-        node_version: nodeVersion,
+        node_version: nodeVersion || null,
         branch,
       });
       showToast('Project build settings updated successfully!');
@@ -86,18 +102,22 @@ export function ProjectSettingsDrawer({ project, onClose, onSaved }: ProjectSett
   const handleSaveEnvVars = async () => {
     setIsSubmitting(true);
     try {
-      await api.updateEnvVars(project.id, envVars);
-      showToast('Environment variables saved!');
-      onSaved();
-    } catch {
-      showToast('Failed to save environment variables');
+      const response = await api.updateEnvVars(project.id, envVars);
+      setEnvVars(response);
+      setEnvLoadError(null);
+      showToast(`Synced ${response.length} environment variables to ${project.platform}.`);
+    } catch (error) {
+      showToast(error instanceof Error ? error.message : 'Failed to sync environment variables.');
     } finally {
       setIsSubmitting(false);
     }
   };
 
   const addEnvVar = () => {
-    setEnvVars([...envVars, { key: '', value: '', target: 'all', is_secret: false }]);
+    setEnvVars([
+      ...envVars,
+      { key: '', value: '', target: 'all', is_secret: true },
+    ]);
   };
 
   const updateEnvVar = (index: number, field: keyof EnvVar, val: any) => {
@@ -106,9 +126,20 @@ export function ProjectSettingsDrawer({ project, onClose, onSaved }: ProjectSett
     setEnvVars(updated);
   };
 
-  const removeEnvVar = (index: number) => {
-    const updated = envVars.filter((_, i) => i !== index);
-    setEnvVars(updated);
+  const removeEnvVar = async (index: number) => {
+    const variable = envVars[index];
+    if (variable.id) {
+      setIsSubmitting(true);
+      try {
+        await api.deleteEnvVar(project.id, variable.id);
+      } catch (error) {
+        showToast(error instanceof Error ? error.message : 'Unable to delete provider environment variable.');
+        setIsSubmitting(false);
+        return;
+      }
+      setIsSubmitting(false);
+    }
+    setEnvVars((previous) => previous.filter((_, currentIndex) => currentIndex !== index));
   };
 
   const toggleSecretVisibility = (index: number) => {
@@ -142,7 +173,7 @@ export function ProjectSettingsDrawer({ project, onClose, onSaved }: ProjectSett
                 </span>
               </div>
               <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-                Configure build commands, root directory, and environment secrets.
+                Configure the stored build settings. Environment variables are not persisted by the current API.
               </p>
             </div>
           </div>
@@ -300,7 +331,7 @@ export function ProjectSettingsDrawer({ project, onClose, onSaved }: ProjectSett
             <div className="space-y-4">
               <div className="flex items-center justify-between">
                 <p className="text-xs text-slate-500 dark:text-slate-400">
-                  Environment variables are securely injected into your deployment container builds.
+                  Values sync directly to the deployment provider and apply on the next deploy. Stored values are never revealed.
                 </p>
                 <button
                   type="button"
@@ -310,6 +341,9 @@ export function ProjectSettingsDrawer({ project, onClose, onSaved }: ProjectSett
                   <Plus size={13} /> Add Variable
                 </button>
               </div>
+
+              {isLoadingEnvVars && <p role="status" className="text-xs text-slate-500">Loading provider variables...</p>}
+              {envLoadError && <p role="alert" className="text-xs text-rose-600 dark:text-rose-400">{envLoadError}</p>}
 
               {envVars.length === 0 ? (
                 <div className="py-12 text-center text-slate-400 dark:text-slate-500 italic border border-dashed border-slate-200 dark:border-slate-800 rounded-2xl">
@@ -343,6 +377,7 @@ export function ProjectSettingsDrawer({ project, onClose, onSaved }: ProjectSett
                         <button
                           type="button"
                           onClick={() => removeEnvVar(idx)}
+                          disabled={isSubmitting}
                           className="p-1.5 text-slate-400 hover:text-rose-500 transition"
                           title="Delete variable"
                         >
@@ -353,7 +388,7 @@ export function ProjectSettingsDrawer({ project, onClose, onSaved }: ProjectSett
                       <div className="relative flex items-center">
                         <input
                           type={v.is_secret && !visibleSecrets[idx] ? 'password' : 'text'}
-                          placeholder="VALUE"
+                          placeholder={v.id ? 'Stored at provider; enter a replacement value' : 'VALUE'}
                           value={v.value}
                           onChange={(e) => updateEnvVar(idx, 'value', e.target.value)}
                           className="w-full font-mono rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 py-1.5 pl-2.5 pr-16 text-xs text-slate-900 dark:text-white focus:border-indigo-500 focus:outline-none"

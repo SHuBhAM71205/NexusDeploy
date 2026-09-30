@@ -1,139 +1,171 @@
 import uuid
-from datetime import datetime, timezone
+from datetime import datetime
 from typing import List, Optional
-from fastapi import APIRouter, HTTPException, Query
-from app.db.store import store
-from app.schemas.project import ProjectCreate, ProjectUpdate, ProjectResponse, EnvVar
+
+from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
+from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import selectinload
+
+from app.api.middleware import jwt
+from app.db.models import Project
+from app.db.session import db_session
+from app.schemas.project import ProjectCreate, ProjectUpdate, ProjectResponse
 
 router = APIRouter(prefix="/projects", tags=["Projects"])
 
+
+def _as_iso(value) -> Optional[str]:
+    if value is None:
+        return None
+    return value.isoformat()
+
+
+def _project_to_response(project: Project) -> ProjectResponse:
+    deployments = project.deployments or []
+    total_deploys = len(deployments)
+    active_deployments_count = sum(
+        1 for deployment in deployments if deployment.status.lower() in {"started", "running", "queued", "building"}
+    )
+    last_deployed_at = None
+    for deployment in deployments:
+        candidate = deployment.completed_at or deployment.started_at
+        if candidate is not None and (last_deployed_at is None or candidate > last_deployed_at):
+            last_deployed_at = candidate
+
+    return ProjectResponse(
+        id=str(project.id),
+        name=project.name,
+        description=project.description,
+        repo_url=project.repo_url,
+        branch=project.branch,
+        framework=project.framework,
+        platform=project.platform,
+        root_directory=project.root_directory or "./",
+        build_command=project.build_command,
+        output_directory=project.output_directory,
+        install_command=project.install_command,
+        node_version=project.node_version,
+        status=project.status,
+        created_at=_as_iso(project.created_at),
+        updated_at=_as_iso(project.updated_at),
+        last_deployed_at=_as_iso(last_deployed_at),
+        production_url=None,
+        staging_url=None,
+        total_deploys=total_deploys,
+        active_deployments_count=active_deployments_count,
+        domains=[],
+        environment_variables=[],
+        owner_id=str(project.owner_id),
+    )
+
+
 @router.get("", response_model=List[ProjectResponse])
-def list_projects(
+async def list_projects(
+    request: Request,
     search: Optional[str] = Query(None, description="Search by project name or framework"),
     framework: Optional[str] = Query(None, description="Filter by framework"),
-    status: Optional[str] = Query(None, description="Filter by status")
+    status: Optional[str] = Query(None, description="Filter by status"),
+    db: AsyncSession = Depends(db_session),
+    _: bool = Depends(jwt.jwt_verify_middleware),
 ):
-    projects = list(store.projects.values())
+    user_id = uuid.UUID(str(request.state.user_id))
+    query = (
+        select(Project)
+        .where(Project.owner_id == user_id)
+        .options(selectinload(Project.deployments))
+        .order_by(Project.created_at.desc())
+    )
+    result = await db.execute(query)
+    projects = result.scalars().all()
+
     if search:
-        s = search.lower()
-        projects = [p for p in projects if s in p["name"].lower() or s in p["framework"].lower() or (p.get("description") and s in p["description"].lower())]
+        needle = search.lower()
+        projects = [
+            project for project in projects
+            if needle in project.name.lower()
+            or (project.framework and needle in project.framework.lower())
+            or (project.description and needle in project.description.lower())
+        ]
     if framework:
-        projects = [p for p in projects if framework.lower() in p["framework"].lower()]
+        projects = [project for project in projects if project.framework and framework.lower() in project.framework.lower()]
     if status:
-        projects = [p for p in projects if p["status"].lower() == status.lower()]
-    return projects
+        projects = [project for project in projects if project.status.lower() == status.lower()]
+    return [_project_to_response(project) for project in projects]
+
 
 @router.get("/{project_id}", response_model=ProjectResponse)
-def get_project(project_id: str):
-    if project_id not in store.projects:
+async def get_project(project_id: str, request: Request, db: AsyncSession = Depends(db_session), _: bool = Depends(jwt.jwt_verify_middleware)):
+    user_id = uuid.UUID(str(request.state.user_id))
+    project = await db.get(Project, uuid.UUID(project_id))
+    if project is None or project.owner_id != user_id:
         raise HTTPException(status_code=404, detail="Project not found")
-    return store.projects[project_id]
+    await db.refresh(project, attribute_names=["deployments"])
+    return _project_to_response(project)
+
 
 @router.post("", response_model=ProjectResponse, status_code=201)
-def create_project(payload: ProjectCreate):
-    new_id = f"proj-{uuid.uuid4().hex[:6]}"
-    now = datetime.now(timezone.utc).isoformat()
-    slug = payload.name.lower().replace(" ", "-").replace("_", "-")
-    
-    project_data = {
-        "id": new_id,
-        "name": payload.name,
-        "description": payload.description or f"{payload.name} cloud deployment",
-        "repo_url": payload.repo_url,
-        "branch": payload.branch or "main",
-        "framework": payload.framework or "React",
-        "root_directory": payload.root_directory or "./",
-        "build_command": payload.build_command or "npm run build",
-        "output_directory": payload.output_directory or "dist",
-        "install_command": payload.install_command or "npm install",
-        "node_version": payload.node_version or "20.x",
-        "status": "active",
-        "created_at": now,
-        "updated_at": now,
-        "last_deployed_at": "Just now",
-        "production_url": f"https://{slug}.nexusdeploy.app",
-        "staging_url": f"https://staging-{slug}.nexusdeploy.app",
-        "total_deploys": 1,
-        "active_deployments_count": 1,
-        "domains": [f"{slug}.nexusdeploy.app"],
-        "environment_variables": [v.model_dump() for v in (payload.environment_variables or [])]
-    }
-    
-    store.projects[new_id] = project_data
+async def create_project(payload: ProjectCreate, request: Request, db: AsyncSession = Depends(db_session), _: bool = Depends(jwt.jwt_verify_middleware)):
+    user_id = uuid.UUID(str(request.state.user_id))
+    project = Project(
+        owner_id=user_id,
+        name=payload.name,
+        description=payload.description,
+        platform=payload.platform or "vercel",
+        repo_url=payload.repo_url,
+        root_directory=payload.root_directory or "./",
+        branch=payload.branch or "main",
+        framework=payload.framework or "React",
+        build_command=payload.build_command or "npm run build",
+        output_directory=payload.output_directory or "dist",
+        install_command=payload.install_command or "npm install",
+        node_version=payload.node_version or "20.x",
+        status="active",
+    )
+    db.add(project)
+    await db.commit()
+    await db.refresh(project)
+    await db.refresh(project, attribute_names=["deployments"])
+    return _project_to_response(project)
 
-    # Create initial deployment record
-    dep_id = f"dep-{uuid.uuid4().hex[:6]}"
-    store.deployments.insert(0, {
-        "id": dep_id,
-        "project_id": new_id,
-        "project_name": payload.name,
-        "environment": "production",
-        "status": "Success",
-        "branch": payload.branch or "main",
-        "commit_hash": uuid.uuid4().hex[:7],
-        "commit_message": "chore: initial project initialization",
-        "author": "Jane Doe",
-        "started_at": "Just now",
-        "completed_at": "Just now",
-        "duration": "48s",
-        "url": f"https://{slug}.nexusdeploy.app",
-        "logs_count": 8,
-        "trigger_type": "manual",
-        "logs": [
-            {"timestamp": "Just now", "level": "info", "message": f"Initialized project {payload.name}"},
-            {"timestamp": "Just now", "level": "info", "message": f"Framework preset detected: {payload.framework}"},
-            {"timestamp": "Just now", "level": "success", "message": f"Initial production build live at https://{slug}.nexusdeploy.app"}
-        ]
-    })
-
-    # Log activity
-    store.activities.insert(0, {
-        "id": f"act-{uuid.uuid4().hex[:6]}",
-        "action": f"Created new project '{payload.name}'",
-        "project_name": payload.name,
-        "user_name": "Jane Doe",
-        "timestamp": "Just now",
-        "type": "project_created",
-        "status": "success",
-        "details": f"Connected to repo: {payload.repo_url}"
-    })
-
-    return project_data
 
 @router.patch("/{project_id}", response_model=ProjectResponse)
-def update_project(project_id: str, payload: ProjectUpdate):
-    if project_id not in store.projects:
+async def update_project(project_id: str, payload: ProjectUpdate, request: Request, db: AsyncSession = Depends(db_session), _: bool = Depends(jwt.jwt_verify_middleware)):
+    user_id = uuid.UUID(str(request.state.user_id))
+    project = await db.get(Project, uuid.UUID(project_id))
+    if project is None or project.owner_id != user_id:
         raise HTTPException(status_code=404, detail="Project not found")
-    
-    proj = store.projects[project_id]
+
     update_data = payload.model_dump(exclude_unset=True)
-    for k, v in update_data.items():
-        proj[k] = v
-    proj["updated_at"] = datetime.now(timezone.utc).isoformat()
-    return proj
+    for key, value in update_data.items():
+        if value is not None:
+            setattr(project, key, value)
+    project.updated_at = datetime.utcnow()
+    await db.commit()
+    await db.refresh(project)
+    await db.refresh(project, attribute_names=["deployments"])
+    return _project_to_response(project)
+
 
 @router.delete("/{project_id}")
-def delete_project(project_id: str):
-    if project_id not in store.projects:
+async def delete_project(project_id: str, request: Request, db: AsyncSession = Depends(db_session), _: bool = Depends(jwt.jwt_verify_middleware)):
+    user_id = uuid.UUID(str(request.state.user_id))
+    project = await db.get(Project, uuid.UUID(project_id))
+    if project is None or project.owner_id != user_id:
         raise HTTPException(status_code=404, detail="Project not found")
-    deleted = store.projects.pop(project_id)
-    return {"message": f"Project '{deleted['name']}' deleted successfully", "id": project_id}
 
-@router.post("/{project_id}/env", response_model=List[EnvVar])
-def update_env_vars(project_id: str, vars: List[EnvVar]):
-    if project_id not in store.projects:
+    await db.delete(project)
+    await db.commit()
+    return {"message": f"Project '{project.name}' deleted successfully", "id": project_id}
+
+
+@router.post("/{project_id}/env")
+async def update_env_vars(project_id: str, request: Request, db: AsyncSession = Depends(db_session), _: bool = Depends(jwt.jwt_verify_middleware)):
+    user_id = uuid.UUID(str(request.state.user_id))
+    project = await db.get(Project, uuid.UUID(project_id))
+    if project is None or project.owner_id != user_id:
         raise HTTPException(status_code=404, detail="Project not found")
-    store.projects[project_id]["environment_variables"] = [v.model_dump() for v in vars]
-    
-    store.activities.insert(0, {
-        "id": f"act-{uuid.uuid4().hex[:6]}",
-        "action": "Updated environment variables",
-        "project_name": store.projects[project_id]["name"],
-        "user_name": "Jane Doe",
-        "timestamp": "Just now",
-        "type": "env_update",
-        "status": "success",
-        "details": f"Saved {len(vars)} environment variables"
-    })
-    
-    return vars
+    raise HTTPException(
+        status_code=status.HTTP_501_NOT_IMPLEMENTED,
+        detail="Environment variables must be synchronized through the host agent and deployment provider.",
+    )
