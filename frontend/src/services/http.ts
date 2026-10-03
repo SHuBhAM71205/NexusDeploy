@@ -4,7 +4,7 @@ import { env } from '../lib/env';
 export const http = axios.create({ baseURL: env.apiUrl, timeout: 15_000 });
 
 http.interceptors.request.use((config) => {
-  const token = localStorage.getItem('nexus_token');
+  const token = sessionStorage.getItem('nexus_token');
   if (token && config.headers) {
     config.headers.Authorization = `Bearer ${token}`;
   }

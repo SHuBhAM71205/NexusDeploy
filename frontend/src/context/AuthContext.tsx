@@ -56,7 +56,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           const currentUser = await api.getMe();
           setUser(currentUser);
         } catch {
-          localStorage.removeItem('nexus_token');
+          sessionStorage.removeItem('nexus_token');
           setToken(null);
           setUser(null);
           setIsAuthModalOpen(true);
@@ -100,7 +100,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     // Registration creates the account.
     // The user must log in separately to receive a JWT.
-    localStorage.removeItem('nexus_token');
+    sessionStorage.removeItem('nexus_token');
     setToken(null);
     setUser(null);
   } finally {
