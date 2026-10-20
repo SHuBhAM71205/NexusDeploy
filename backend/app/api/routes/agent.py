@@ -32,6 +32,7 @@ class AgentDeploymentReport(BaseModel):
     status: str = Field(..., min_length=1)
     environment: str = Field("production")
     branch: Optional[str] = None
+    repository_url: Optional[str] = None
     url: Optional[str] = None
     error: Optional[str] = None
     provider_metadata: Optional[dict[str, Any]] = None
@@ -89,6 +90,8 @@ async def upsert_agent_deployment_report(session: AsyncSession, payload: AgentDe
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Project not found for deployment report.",
         )
+    if payload.repository_url is not None:
+        project.repo_url = payload.repository_url
 
     existing_result = await session.execute(
         select(Deployment).where(Deployment.job_id == payload.job_id)

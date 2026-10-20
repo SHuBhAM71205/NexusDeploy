@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useRef } from 'react';
 import type { User, LoginCredentials, RegisterData } from '../types';
 import { api } from '../services/api';
 
@@ -7,9 +7,6 @@ interface AuthContextType {
   token: string | null;
   isAuthenticated: boolean;
   isLoading: boolean;
-  isAuthModalOpen: boolean;
-  openAuthModal: () => void;
-  closeAuthModal: () => void;
   login: (credentials: LoginCredentials) => Promise<void>;
   register: (data: RegisterData) => Promise<void>;
   logout: () => Promise<void>;
@@ -21,58 +18,42 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [user, setUser] = useState<User | null>(null);
   const [token, setToken] = useState<string | null>(() => sessionStorage.getItem('nexus_token'));
   const [isLoading, setIsLoading] = useState<boolean>(true);
-  const [isAuthModalOpen, setIsAuthModalOpen] = useState<boolean>(false);
+  const didInitialize = useRef(false);
 
   useEffect(() => {
-    // Check for Google usr redirect query params
+    if (didInitialize.current) return;
+    didInitialize.current = true;
+
     const urlParams = new URLSearchParams(window.location.search);
-    const usrToken = urlParams.get('access_token');
-    const usrUsername = urlParams.get('username');
+    const isGoogleOAuthCallback = urlParams.get('oauth') === 'success';
 
-    if (usrToken) {
-      sessionStorage.setItem('nexus_token', usrToken);
-      setToken(usrToken);
-
-      // Clean query parameters from address bar cleanly
-      const cleanUrl =
-        window.location.protocol + '//' + window.location.host + window.location.pathname;
-      window.history.replaceState({ path: cleanUrl }, '', cleanUrl);
-
-      if (usrUsername) {
-        setUser({
-          id: 'usr-google',
-          email: `${usrUsername.toLowerCase().replace(/\s+/g, '.')}@gmail.com`,
-          username: usrUsername,
-          full_name: usrUsername,
-          role: 'Developer',
-        });
-      }
+    if (isGoogleOAuthCallback) {
+      window.history.replaceState({}, '', `${window.location.pathname}${window.location.hash}`);
     }
 
     const initAuth = async () => {
-      const activeToken = sessionStorage.getItem('nexus_token');
-      if (activeToken) {
-        try {
-          const currentUser = await api.getMe();
-          setUser(currentUser);
-        } catch {
-          sessionStorage.removeItem('nexus_token');
-          setToken(null);
-          setUser(null);
-          setIsAuthModalOpen(true);
+      try {
+        if (isGoogleOAuthCallback) {
+          const refreshed = await api.refreshSession();
+          sessionStorage.setItem('nexus_token', refreshed.access_token);
+          setToken(refreshed.access_token);
         }
-      } else {
-        // Unauthenticated default
+
+        if (sessionStorage.getItem('nexus_token')) {
+          const currentUser = await api.getMe();
+          setUser({ ...currentUser, full_name: currentUser.full_name || currentUser.username });
+        }
+      } catch {
+        sessionStorage.removeItem('nexus_token');
+        setToken(null);
         setUser(null);
+      } finally {
+        setIsLoading(false);
       }
-      setIsLoading(false);
     };
 
     initAuth();
   }, []);
-
-  const openAuthModal = () => setIsAuthModalOpen(true);
-  const closeAuthModal = () => setIsAuthModalOpen(false);
 
   const login = async (credentials: LoginCredentials) => {
     setIsLoading(true);
@@ -80,13 +61,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const res = await api.login(credentials);
       sessionStorage.setItem('nexus_token', res.access_token);
       setToken(res.access_token);
-      if (res.user) {
-        setUser(res.user);
-      } else {
-        const currentUser = await api.getMe();
-        setUser(currentUser);
-      }
-      closeAuthModal();
+      const currentUser = await api.getMe();
+      setUser({ ...currentUser, full_name: currentUser.full_name || currentUser.username });
     } finally {
       setIsLoading(false);
     }
@@ -127,9 +103,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         token,
         isAuthenticated: !!user || !!token,
         isLoading,
-        isAuthModalOpen,
-        openAuthModal,
-        closeAuthModal,
         login,
         register,
         logout,

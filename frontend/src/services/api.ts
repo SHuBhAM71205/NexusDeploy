@@ -222,6 +222,11 @@ export const api = {
   return res.data;
 },
 
+  async refreshSession(): Promise<AuthResponse> {
+    const res = await http.post('/auth/refresh');
+    return res.data;
+  },
+
   async register(data: RegisterData) {
   const res = await http.post('/auth/register', data);
   return res.data;

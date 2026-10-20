@@ -96,6 +96,7 @@ async def test_agent_report_creates_and_updates_deployment(sqlite_session):
         "project_id": str(project.id),
         "provider": "render",
         "status": "success",
+        "repository_url": "https://github.com/example/demo-api",
         "url": "https://demo.example.com",
         "provider_metadata": {"backendId": "svc-1", "backendUrl": "https://api.example.com", "frontendId": "site-1"},
         "started_at": "2026-09-27T12:00:00+00:00",
@@ -108,10 +109,59 @@ async def test_agent_report_creates_and_updates_deployment(sqlite_session):
     assert rows[0].status == "success"
     assert rows[0].url == "https://demo.example.com"
     assert rows[0].provider_metadata["frontendId"] == "site-1"
+    assert project.repo_url == "https://github.com/example/demo-api"
     assert updated["status"] == "success"
     
     # Verify no duplicate deployment records created
     assert len(rows) == 1
+
+
+@pytest.mark.asyncio
+async def test_agent_report_persists_github_preparation_failure(sqlite_session):
+    session: AsyncSession = sqlite_session
+    user = User(email="github-failure@example.com", name="GitHub Failure")
+    session.add(user)
+    await session.commit()
+    await session.refresh(user)
+
+    project = Project(
+        owner_id=user.id,
+        name="source-app",
+        platform="netlify",
+        branch="main",
+        status="active",
+    )
+    session.add(project)
+    await session.commit()
+    await session.refresh(project)
+
+    result = await upsert_agent_deployment_report(
+        session,
+        AgentDeploymentReport.model_validate({
+            "job_id": "job-github-push-failed",
+            "project_id": str(project.id),
+            "provider": "netlify",
+            "status": "failed",
+            "branch": "main",
+            "repository_url": "https://github.com/example/source-app",
+            "error": "GitHub preparation failed: remote branch conflict",
+            "provider_metadata": {
+                "phase": "github",
+                "repositoryUrl": "https://github.com/example/source-app",
+            },
+            "started_at": "2026-10-20T09:00:00+00:00",
+            "completed_at": "2026-10-20T09:01:00+00:00",
+        }),
+    )
+
+    deployment = (await session.execute(
+        __import__("sqlalchemy").select(Deployment).where(Deployment.job_id == "job-github-push-failed")
+    )).scalar_one()
+    assert result["status"] == "failed"
+    assert deployment.status == "failed"
+    assert deployment.error == "GitHub preparation failed: remote branch conflict"
+    assert deployment.provider_metadata["phase"] == "github"
+    assert project.repo_url == "https://github.com/example/source-app"
 
 
 @pytest.mark.asyncio

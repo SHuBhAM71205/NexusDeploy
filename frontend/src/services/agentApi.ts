@@ -36,6 +36,17 @@ export interface GitStatusResult {
   remoteUrl?: string;
 }
 
+export interface GitHubRepository {
+  id: number;
+  name: string;
+  fullName: string;
+  owner: string;
+  htmlUrl: string;
+  cloneUrl: string;
+  defaultBranch: string | null;
+  private: boolean;
+}
+
 export interface AgentProject {
   id: string;
   name: string;
@@ -106,6 +117,11 @@ export const agentApi = {
     return res.data;
   },
 
+  async listGitHubRepositories(): Promise<GitHubRepository[]> {
+    const res = await agentClient.get('/api/agent/github/repos');
+    return res.data.repositories;
+  },
+
   async getEnvironmentVariables(provider: string, projectName: string): Promise<{ variables: EnvVar[] }> {
     const res = await agentClient.get('/api/agent/environment-variables', {
       params: { provider, projectName },
@@ -131,11 +147,16 @@ export const agentApi = {
   async deploy(payload: {
     provider: string;
     path: string;
+    sourceType?: 'local' | 'github';
     project_id?: string;
     project_url?: string;
     repository?: string;
+    repoAction?: 'create' | 'existing';
+    repoOwner?: string;
     repoUrl?: string;
     repoName?: string;
+    branch?: string;
+    deploymentRootDirectory?: string;
     envVars?: Array<{ key: string; value: string }>;
   }): Promise<{ status: string; jobId: string; message: string }> {
     const res = await agentClient.post('/api/agent/deploy', payload);
@@ -151,6 +172,7 @@ export const agentApi = {
     completedAt: string | null;
     url: string | null;
     error: string | null;
+    logs: Array<{ timestamp: string; level: string; message: string }>;
   }> {
     const res = await agentClient.get(`/api/agent/deploy/status/${jobId}`);
     return res.data;

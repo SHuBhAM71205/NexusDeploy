@@ -5,6 +5,7 @@ import { TokenPromptModal } from './TokenPromptModal';
 import {
   Terminal,
   FolderOpen,
+  Github,
   Lock,
   Key,
   ShieldCheck,
@@ -12,10 +13,8 @@ import {
   ExternalLink,
   CheckCircle2,
   XCircle,
-  Github,
-  HardDrive,
 } from 'lucide-react';
-import { agentApi } from '../../services/agentApi';
+import { agentApi, type GitHubRepository } from '../../services/agentApi';
 import type { Project, Framework, EnvVar } from '../../types';
 
 interface NewProjectModalProps {
@@ -61,16 +60,52 @@ const frameworkPresets: Record<
   },
 };
 
+function isCleanGitHubRepositoryUrl(value: string) {
+  try {
+    const url = new URL(value);
+    const pathParts = url.pathname.replace(/\/+$/, '').split('/').filter(Boolean);
+    return url.protocol === 'https:'
+      && url.hostname.toLowerCase() === 'github.com'
+      && !url.port
+      && !url.username
+      && !url.password
+      && !url.search
+      && !url.hash
+      && pathParts.length === 2
+      && pathParts.every((part) => /^[A-Za-z0-9_.-]+$/.test(part.replace(/\.git$/i, '')));
+  } catch {
+    return false;
+  }
+}
+
+function normalizeDeploymentRootDirectory(value: string) {
+  const trimmed = value.trim();
+  if (!trimmed) return '';
+  const portablePath = trimmed.replace(/\\/g, '/');
+  if (trimmed.includes('\0') || portablePath.startsWith('/') || /^[A-Za-z]:/.test(trimmed)) return null;
+  const segments = portablePath.split('/');
+  if (segments.some((segment) => segment === '..' || segment.includes(':'))) return null;
+  const normalized = segments.filter((segment) => segment && segment !== '.').join('/');
+  return normalized || '';
+}
+
 export function NewProjectModal({ isOpen, onClose, onSubmit, onRefresh }: NewProjectModalProps) {
   const [step, setStep] = useState(1); // 1: Config, 2: Auth Tokens, 3: Deploy
   const [sourceType, setSourceType] = useState<'local' | 'github'>('local');
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
   const [platform, setPlatform] = useState('vercel');
+  const [repoMode, setRepoMode] = useState<'create' | 'existing'>('create');
   const [repoUrl, setRepoUrl] = useState('');
+  const [newRepositoryName, setNewRepositoryName] = useState('');
+  const [githubRepositories, setGithubRepositories] = useState<GitHubRepository[]>([]);
+  const [selectedGithubRepository, setSelectedGithubRepository] = useState('');
+  const [isLoadingGithubRepositories, setIsLoadingGithubRepositories] = useState(false);
+  const [githubRepositoryError, setGithubRepositoryError] = useState<string | null>(null);
   const [gitBranch, setGitBranch] = useState('main');
   const [framework, setFramework] = useState<Framework>('React / Vite');
   const [rootDirectory, setRootDirectory] = useState('');
+  const [deploymentRootDirectory, setDeploymentRootDirectory] = useState('');
   const [buildCommand, setBuildCommand] = useState(frameworkPresets['React / Vite'].build);
   const [outputDir, setOutputDir] = useState(frameworkPresets['React / Vite'].output);
   const [installCommand, setInstallCommand] = useState(frameworkPresets['React / Vite'].install);
@@ -98,6 +133,7 @@ export function NewProjectModal({ isOpen, onClose, onSubmit, onRefresh }: NewPro
   const [currentJobId, setCurrentJobId] = useState<string | null>(null);
   const activeJobIdRef = useRef<string | null>(null);
   const isStartingDeploymentRef = useRef(false);
+  const seenDeploymentLogsRef = useRef(new Set<string>());
   // Milestone 5: holds the WS disconnect function so we can clean it up on close
   const disconnectLogsRef = useRef<(() => void) | null>(null);
 
@@ -110,6 +146,7 @@ export function NewProjectModal({ isOpen, onClose, onSubmit, onRefresh }: NewPro
         setDeployedUrl(null);
         setDeployError(null);
         setCurrentJobId(null);
+        seenDeploymentLogsRef.current.clear();
       }
 
       agentApi.browse().then((res) => {
@@ -126,7 +163,7 @@ export function NewProjectModal({ isOpen, onClose, onSubmit, onRefresh }: NewPro
     }
   }, [isOpen]);
   useEffect(() => {
-    if (rootDirectory && rootDirectory.length > 2) {
+    if (sourceType === 'local' && rootDirectory && rootDirectory.length > 2) {
       agentApi
         .analyze(rootDirectory)
         .then((res) => {
@@ -146,11 +183,10 @@ export function NewProjectModal({ isOpen, onClose, onSubmit, onRefresh }: NewPro
         .getGitStatus(rootDirectory)
         .then((git) => {
           if (git?.branch) setGitBranch(git.branch);
-          if (git?.remoteUrl) setRepoUrl(git.remoteUrl);
         })
         .catch(() => {});
     }
-  }, [rootDirectory]);
+  }, [rootDirectory, sourceType]);
 
   useEffect(() => {
     if (isOpen) {
@@ -187,6 +223,34 @@ export function NewProjectModal({ isOpen, onClose, onSubmit, onRefresh }: NewPro
     setInstallCommand(preset.install);
   };
 
+  const loadGithubRepositories = async () => {
+    setIsLoadingGithubRepositories(true);
+    setGithubRepositoryError(null);
+    try {
+      const repositories = await agentApi.listGitHubRepositories();
+      setGithubRepositories(repositories);
+      if (selectedGithubRepository && !repositories.some((repo) => repo.fullName === selectedGithubRepository)) {
+        setSelectedGithubRepository('');
+      }
+    } catch (error: any) {
+      setGithubRepositoryError(
+        error?.response?.data?.message || error?.message || 'Unable to load GitHub repositories.',
+      );
+    } finally {
+      setIsLoadingGithubRepositories(false);
+    }
+  };
+
+  const addDeploymentLog = (log: { time?: string; timestamp?: string; type?: string; level?: string; msg?: string; message?: string }) => {
+    const time = log.time || (log.timestamp ? new Date(log.timestamp).toLocaleTimeString() : new Date().toLocaleTimeString());
+    const type = log.type || log.level || 'info';
+    const msg = log.msg || log.message || '';
+    const key = `${log.timestamp || time}|${type}|${msg}`;
+    if (seenDeploymentLogsRef.current.has(key)) return;
+    seenDeploymentLogsRef.current.add(key);
+    setDeployLogs((previous) => [...previous, { time, type, msg }]);
+  };
+
   const addEnvVar = () => setEnvVars((prev) => [...prev, { key: '', value: '', target: 'all' }]);
   const removeEnvVar = (index: number) => setEnvVars((prev) => prev.filter((_, i) => i !== index));
   const updateEnvVar = (index: number, key: string, value: string) => {
@@ -195,11 +259,19 @@ export function NewProjectModal({ isOpen, onClose, onSubmit, onRefresh }: NewPro
 
   const startDeployment = async () => {
     if (isStartingDeploymentRef.current || activeJobIdRef.current) return;
+    const normalizedDeploymentRoot = normalizeDeploymentRootDirectory(deploymentRootDirectory);
+    if (normalizedDeploymentRoot === null) {
+      setDeployError('Deployment Root Directory must be a relative path inside the repository.');
+      setDeployStatus('failed');
+      setStep(3);
+      return;
+    }
 
     isStartingDeploymentRef.current = true;
     setStep(3);
     setDeployStatus('creating');
     setDeployLogs([]);
+    seenDeploymentLogsRef.current.clear();
     setDeployedUrl(null);
     setDeployError(null);
 
@@ -208,14 +280,19 @@ export function NewProjectModal({ isOpen, onClose, onSubmit, onRefresh }: NewPro
     disconnectLogsRef.current = null;
 
     try {
+      const selectedDestination = githubRepositories.find((repo) => repo.fullName === selectedGithubRepository);
       const project = await onSubmit({
         name: name.trim() || 'nexus-app',
         platform,
         description: description.trim() || null,
-        repo_url: repoUrl.trim() || null,
+        repo_url: sourceType === 'github'
+          ? repoUrl.trim()
+          : repoMode === 'existing'
+            ? selectedDestination?.htmlUrl || null
+            : null,
         branch: gitBranch.trim() || 'main',
         framework,
-        root_directory: rootDirectory.trim(),
+        root_directory: sourceType === 'local' ? rootDirectory.trim() : './',
         build_command: buildCommand,
         output_directory: outputDir,
         install_command: installCommand,
@@ -227,11 +304,24 @@ export function NewProjectModal({ isOpen, onClose, onSubmit, onRefresh }: NewPro
 
       const result = await agentApi.deploy({
         provider: (project.platform || platform).toLowerCase(),
-        path: sourceType === 'local' ? project.root_directory : 'C:/',
+        path: sourceType === 'local' ? rootDirectory.trim() : '',
         project_id: project.id,
-        repository: sourceType,
-        repoUrl: repoUrl || undefined,
-        repoName: name || 'nexus-app',
+        sourceType,
+        repository: sourceType === 'local' ? 'github' : undefined,
+        repoAction: sourceType === 'local' ? repoMode : undefined,
+        repoOwner: sourceType === 'local' ? selectedDestination?.owner : undefined,
+        repoUrl: sourceType === 'github'
+          ? repoUrl.trim()
+          : repoMode === 'existing'
+            ? selectedDestination?.htmlUrl
+            : undefined,
+        repoName: sourceType === 'github'
+          ? name.trim() || 'nexus-app'
+          : repoMode === 'existing'
+            ? selectedDestination?.name
+            : newRepositoryName.trim() || name || 'nexus-app',
+        branch: gitBranch.trim() || 'main',
+        deploymentRootDirectory: normalizedDeploymentRoot,
         envVars: envVars.filter((ev) => ev.key.trim().length > 0).map((ev) => ({ key: ev.key.trim(), value: ev.value })),
       });
 
@@ -242,7 +332,7 @@ export function NewProjectModal({ isOpen, onClose, onSubmit, onRefresh }: NewPro
 
         // Milestone 5: connect log stream *after* we have jobId so it subscribes correctly
         disconnectLogsRef.current = agentApi.connectLogStream(
-          (log) => setDeployLogs((prev) => [...prev, log]),
+          (log) => addDeploymentLog(log),
           undefined,
           result.jobId,
         );
@@ -270,6 +360,7 @@ export function NewProjectModal({ isOpen, onClose, onSubmit, onRefresh }: NewPro
     const pollInterval = setInterval(async () => {
       try {
         const job = await agentApi.getDeploymentStatus(currentJobId);
+        job.logs?.forEach((log) => addDeploymentLog(log));
 
         if (job.status === 'success') {
           activeJobIdRef.current = null;
@@ -358,103 +449,226 @@ export function NewProjectModal({ isOpen, onClose, onSubmit, onRefresh }: NewPro
                 </div>
               </div>
 
-              {/* Source Type Selector */}
               <div>
-                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                  Where is your code located? *
+                <label className="mb-1 block text-xs font-semibold text-slate-700 dark:text-slate-300">
+                  Project source
                 </label>
                 <div className="grid grid-cols-2 gap-2">
                   <button
                     type="button"
+                    aria-pressed={sourceType === 'local'}
                     onClick={() => setSourceType('local')}
-                    className={`flex items-center gap-2 rounded-xl border p-3 text-left text-xs transition ${
+                    className={`flex items-center gap-2 rounded-xl border p-3 text-left text-xs ${
                       sourceType === 'local'
-                        ? 'border-indigo-500 bg-indigo-50 text-indigo-700 font-bold dark:bg-indigo-600/20 dark:text-white'
-                        : 'border-slate-200 bg-white text-slate-600 hover:border-slate-300 dark:border-slate-800 dark:bg-slate-950/60 dark:text-slate-400'
+                        ? 'border-indigo-500 bg-indigo-50 font-bold text-indigo-700 dark:bg-indigo-600/20 dark:text-white'
+                        : 'border-slate-200 bg-white text-slate-600 dark:border-slate-800 dark:bg-slate-950/60 dark:text-slate-400'
                     }`}
                   >
-                    <HardDrive size={18} className="text-indigo-600 dark:text-indigo-400" />
-                    <div>
-                      <div>Local Host Directory</div>
-                      <div className="text-[10px] font-normal text-slate-500 dark:text-slate-400">
-                        Folder on this machine
-                      </div>
-                    </div>
+                    <FolderOpen size={18} />
+                    <span>Folder on this machine</span>
                   </button>
-
                   <button
                     type="button"
+                    aria-pressed={sourceType === 'github'}
                     onClick={() => setSourceType('github')}
-                    className={`flex items-center gap-2 rounded-xl border p-3 text-left text-xs transition ${
+                    className={`flex items-center gap-2 rounded-xl border p-3 text-left text-xs ${
                       sourceType === 'github'
-                        ? 'border-indigo-500 bg-indigo-50 text-indigo-700 font-bold dark:bg-indigo-600/20 dark:text-white'
-                        : 'border-slate-200 bg-white text-slate-600 hover:border-slate-300 dark:border-slate-800 dark:bg-slate-950/60 dark:text-slate-400'
+                        ? 'border-indigo-500 bg-indigo-50 font-bold text-indigo-700 dark:bg-indigo-600/20 dark:text-white'
+                        : 'border-slate-200 bg-white text-slate-600 dark:border-slate-800 dark:bg-slate-950/60 dark:text-slate-400'
                     }`}
                   >
-                    <Github size={18} className="text-slate-900 dark:text-white" />
-                    <div>
-                      <div>GitHub Repository</div>
-                      <div className="text-[10px] font-normal text-slate-500 dark:text-slate-400">
-                        Remote git repo URL
-                      </div>
-                    </div>
+                    <Github size={18} />
+                    <span>Use repository already on GitHub</span>
                   </button>
                 </div>
               </div>
 
-              {/* Path / Repo Input depending on Source Type */}
               {sourceType === 'local' ? (
+              <>
+              {/* Local project folder */}
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300">
+                  Local project folder *
+                </label>
+                <div className="mt-1 flex gap-2">
+                  <input
+                    type="text"
+                    required
+                    placeholder="e.g. C:/Projects/my-app"
+                    value={rootDirectory}
+                    onChange={(e) => setRootDirectory(e.target.value)}
+                    className="flex-1 rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-mono text-slate-900 shadow-sm focus:border-indigo-500 focus:outline-none dark:border-slate-700 dark:bg-slate-950 dark:text-white"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setIsFolderPickerOpen(true)}
+                    className="flex items-center gap-1.5 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-100 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-200"
+                  >
+                    <FolderOpen size={14} className="text-indigo-600 dark:text-indigo-400" /> Browse Path
+                  </button>
+                </div>
+              </div>
+              </>
+              ) : (
+                  <div className="grid gap-3 sm:grid-cols-2">
+                    <div>
+                      <label htmlFor="github-repository-url" className="block text-xs font-semibold text-slate-700 dark:text-slate-300">
+                        GitHub Repository URL *
+                      </label>
+                      <input
+                        id="github-repository-url"
+                        type="url"
+                        required
+                        placeholder="https://github.com/owner/repository"
+                        value={repoUrl}
+                        onChange={(event) => setRepoUrl(event.target.value)}
+                        className="mt-1 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-mono text-slate-900 focus:border-indigo-500 focus:outline-none dark:border-slate-700 dark:bg-slate-950 dark:text-white"
+                      />
+                      {repoUrl.trim() && !isCleanGitHubRepositoryUrl(repoUrl.trim()) && (
+                        <p role="alert" className="mt-1 text-xs text-rose-600 dark:text-rose-400">
+                          Enter a clean HTTPS GitHub owner/repository URL without credentials, query parameters, or fragments.
+                        </p>
+                      )}
+                    </div>
+                    <div>
+                      <label htmlFor="github-branch" className="block text-xs font-semibold text-slate-700 dark:text-slate-300">
+                        Git Branch
+                      </label>
+                      <input
+                        id="github-branch"
+                        type="text"
+                        value={gitBranch}
+                        onChange={(event) => setGitBranch(event.target.value)}
+                        className="mt-1 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-mono text-slate-900 focus:border-indigo-500 focus:outline-none dark:border-slate-700 dark:bg-slate-950 dark:text-white"
+                      />
+                    </div>
+                  </div>
+                )}
+
+              {/* GitHub destination is independent of the selected local folder */}
+              {sourceType === 'local' && (
+              <div className="rounded-xl border border-slate-200 bg-slate-50 p-3.5 space-y-3 dark:border-slate-800 dark:bg-slate-950/80">
+                <div className="flex items-center gap-2">
+                  <Github size={17} className="text-slate-900 dark:text-white" />
+                  <span className="text-xs font-semibold text-slate-800 dark:text-slate-200">
+                    Push project changes to GitHub before deployment
+                  </span>
+                </div>
+                <div className="grid gap-2 sm:grid-cols-2">
+                  <button
+                    type="button"
+                    aria-pressed={repoMode === 'create'}
+                    onClick={() => setRepoMode('create')}
+                    className={`rounded-xl border p-2.5 text-left text-xs ${
+                      repoMode === 'create'
+                        ? 'border-indigo-500 bg-indigo-50 text-indigo-700 dark:bg-indigo-600/20 dark:text-white'
+                        : 'border-slate-200 bg-white text-slate-600 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-400'
+                    }`}
+                  >
+                    Create a new repository
+                  </button>
+                  <button
+                    type="button"
+                    aria-pressed={repoMode === 'existing'}
+                    onClick={() => setRepoMode('existing')}
+                    className={`rounded-xl border p-2.5 text-left text-xs ${
+                      repoMode === 'existing'
+                        ? 'border-indigo-500 bg-indigo-50 text-indigo-700 dark:bg-indigo-600/20 dark:text-white'
+                        : 'border-slate-200 bg-white text-slate-600 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-400'
+                    }`}
+                  >
+                    Use an existing repository
+                  </button>
+                </div>
+                {repoMode === 'create' ? (
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300">
+                      New private repository name *
+                    </label>
+                    <input
+                      type="text"
+                      value={newRepositoryName}
+                      onChange={(e) => setNewRepositoryName(e.target.value)}
+                      placeholder={name || 'my-project'}
+                      className="mt-1 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs text-slate-900 focus:border-indigo-500 focus:outline-none dark:border-slate-700 dark:bg-slate-950 dark:text-white"
+                    />
+                  </div>
+                ) : (
+                  <div className="space-y-2">
+                    <div className="flex gap-2">
+                      <select
+                        aria-label="GitHub repository"
+                        value={selectedGithubRepository}
+                        onChange={(e) => setSelectedGithubRepository(e.target.value)}
+                        className="min-w-0 flex-1 rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs text-slate-900 focus:border-indigo-500 focus:outline-none dark:border-slate-700 dark:bg-slate-950 dark:text-white"
+                      >
+                        <option value="">Select a repository with push access</option>
+                        {githubRepositories.map((repository) => (
+                          <option key={repository.id} value={repository.fullName}>
+                            {repository.fullName}{repository.private ? ' (private)' : ''}
+                          </option>
+                        ))}
+                      </select>
+                      <button
+                        type="button"
+                        onClick={loadGithubRepositories}
+                        disabled={isLoadingGithubRepositories}
+                        className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-700 disabled:opacity-50 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-300"
+                      >
+                        {isLoadingGithubRepositories ? 'Loading...' : 'Load repositories'}
+                      </button>
+                    </div>
+                    {githubRepositoryError && (
+                      <p role="alert" className="text-xs text-rose-600 dark:text-rose-400">{githubRepositoryError}</p>
+                    )}
+                    {githubRepositories.length === 0 && !githubRepositoryError && (
+                      <p className="text-[11px] text-slate-500 dark:text-slate-400">
+                        Save a GitHub token in the next step, then load repositories. Only repositories with push access are listed.
+                      </p>
+                    )}
+                  </div>
+                )}
                 <div>
                   <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300">
-                    Local Folder Directory Path *
+                    Local branch to push
                   </label>
-                  <div className="mt-1 flex gap-2">
-                    <input
-                      type="text"
-                      required
-                      placeholder="e.g. C:/Projects/my-app"
-                      value={rootDirectory}
-                      onChange={(e) => setRootDirectory(e.target.value)}
-                      className="flex-1 rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-mono text-slate-900 shadow-sm focus:border-indigo-500 focus:outline-none dark:border-slate-700 dark:bg-slate-950 dark:text-white"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => setIsFolderPickerOpen(true)}
-                      className="flex items-center gap-1.5 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-100 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-200"
-                    >
-                      <FolderOpen size={14} className="text-indigo-600 dark:text-indigo-400" />{' '}
-                      Browse Path
-                    </button>
-                  </div>
+                  <input
+                    type="text"
+                    value={gitBranch}
+                    onChange={(e) => setGitBranch(e.target.value)}
+                    className="mt-1 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-mono text-slate-900 focus:border-indigo-500 focus:outline-none dark:border-slate-700 dark:bg-slate-950 dark:text-white"
+                  />
                 </div>
-              ) : (
-                <div className="grid gap-3 sm:grid-cols-2">
-                  <div>
-                    <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300">
-                      GitHub Repository URL *
-                    </label>
-                    <input
-                      type="text"
-                      required
-                      placeholder="https://github.com/owner/repository"
-                      value={repoUrl}
-                      onChange={(e) => setRepoUrl(e.target.value)}
-                      className="mt-1 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-mono text-slate-900 shadow-sm focus:border-indigo-500 focus:outline-none dark:border-slate-700 dark:bg-slate-950 dark:text-white"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300">
-                      Git Branch
-                    </label>
-                    <input
-                      type="text"
-                      value={gitBranch}
-                      onChange={(e) => setGitBranch(e.target.value)}
-                      className="mt-1 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-mono text-slate-900 shadow-sm focus:border-indigo-500 focus:outline-none dark:border-slate-700 dark:bg-slate-950 dark:text-white"
-                    />
-                  </div>
-                </div>
+              </div>
               )}
+
+              <div>
+                <label htmlFor="deployment-root-directory" className="block text-xs font-semibold text-slate-700 dark:text-slate-300">
+                  Deployment Root Directory
+                </label>
+                <input
+                  id="deployment-root-directory"
+                  type="text"
+                  value={deploymentRootDirectory}
+                  onChange={(event) => setDeploymentRootDirectory(event.target.value)}
+                  placeholder="frontend"
+                  aria-invalid={deploymentRootDirectory.trim() !== '' && normalizeDeploymentRootDirectory(deploymentRootDirectory) === null}
+                  className="mt-1 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-mono text-slate-900 focus:border-indigo-500 focus:outline-none dark:border-slate-700 dark:bg-slate-950 dark:text-white"
+                />
+                <p className="mt-1 text-[11px] text-slate-500 dark:text-slate-400">
+                  Optional path to the directory the provider should build and deploy (for example, frontend or apps/web). Leave blank to use the repository root.
+                </p>
+                {deploymentRootDirectory.trim() && normalizeDeploymentRootDirectory(deploymentRootDirectory) === null && (
+                  <p role="alert" className="mt-1 text-xs text-rose-600 dark:text-rose-400">
+                    Use a relative path inside the repository; absolute paths and “..” traversal are not allowed.
+                  </p>
+                )}
+                {platform.toLowerCase() === 'render' && normalizeDeploymentRootDirectory(deploymentRootDirectory) && (
+                  <p className="mt-1 text-xs text-amber-600 dark:text-amber-400">
+                    Render subdirectory deployment is not supported by the current adapter. Leave this blank to continue.
+                  </p>
+                )}
+              </div>
 
               {/* Target Cloud Platform */}
               <div>
@@ -497,7 +711,11 @@ export function NewProjectModal({ isOpen, onClose, onSubmit, onRefresh }: NewPro
                   disabled={
                     !name.trim() ||
                     (sourceType === 'local' && !rootDirectory.trim()) ||
-                    (sourceType === 'github' && !repoUrl.trim())
+                    (sourceType === 'github' && !isCleanGitHubRepositoryUrl(repoUrl.trim())) ||
+                    normalizeDeploymentRootDirectory(deploymentRootDirectory) === null ||
+                    (platform.toLowerCase() === 'render' && Boolean(normalizeDeploymentRootDirectory(deploymentRootDirectory))) ||
+                    (sourceType === 'local' && repoMode === 'create' && !(newRepositoryName.trim() || name.trim())) ||
+                    (sourceType === 'local' && repoMode === 'existing' && !selectedGithubRepository)
                   }
                   onClick={() => setStep(2)}
                   className="flex items-center gap-1.5 rounded-xl bg-indigo-600 px-4 py-2 text-xs font-semibold text-white shadow-sm hover:bg-indigo-500 disabled:opacity-50"
@@ -668,16 +886,20 @@ export function NewProjectModal({ isOpen, onClose, onSubmit, onRefresh }: NewPro
                   <div>
                     <div className="text-xs font-bold text-slate-900 dark:text-white">
                       {deployStatus === 'creating'
-                        ? 'Creating PostgreSQL project...'
+                        ? 'Creating project and starting the pipeline...'
                         : deployStatus === 'running'
-                        ? 'Executing Live Deploy via Host Agent...'
+                        ? 'Preparing GitHub repository and deploying...'
                         : deployStatus === 'success'
                           ? 'Deployment Completed Successfully!'
                           : 'Deployment Failed'}
                     </div>
                     <div className="text-[11px] text-slate-500 dark:text-slate-400">
                       Target: {platform.toUpperCase()} •{' '}
-                      {sourceType === 'local' ? rootDirectory : repoUrl}
+                      {sourceType === 'local'
+                        ? `${rootDirectory} → ${repoMode === 'create'
+                          ? (newRepositoryName.trim() || name.trim())
+                          : selectedGithubRepository}`
+                        : repoUrl}
                     </div>
                   </div>
                 </div>

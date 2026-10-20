@@ -13,7 +13,6 @@ import {
   Moon,
   Laptop,
   LogOut,
-  User as UserIcon,
 } from 'lucide-react';
 import { NavLink, Outlet } from 'react-router-dom';
 import { cn } from '../../lib/utils';
@@ -24,7 +23,6 @@ import type { Project, Deployment } from '../../types';
 import { NewProjectModal } from '../ui/NewProjectModal';
 import { TriggerDeployModal } from '../ui/TriggerDeployModal';
 import { CommandSearchModal } from '../ui/CommandSearchModal';
-import { AuthModal } from '../auth/AuthModal';
 
 const navigation = [
   { to: '/', label: 'Overview', icon: LayoutDashboard, end: true },
@@ -44,13 +42,7 @@ export function AppShell() {
   const [loadError, setLoadError] = useState<string | null>(null);
 
   const { theme, setTheme } = useTheme();
-  const {
-    user,
-    openAuthModal,
-    logout,
-    isAuthenticated,
-    isLoading: isAuthLoading,
-  } = useAuth();
+  const { user, logout } = useAuth();
 
   const loadData = async () => {
     setLoadError(null);
@@ -64,18 +56,10 @@ export function AppShell() {
   };
 
   useEffect(() => {
-    if (isAuthLoading) return;
-    if (!isAuthenticated) {
-      setProjects([]);
-      setDeployments([]);
-      openAuthModal();
-      return;
-    }
-
     loadData();
     const interval = setInterval(loadData, 15000);
     return () => clearInterval(interval);
-  }, [isAuthenticated, isAuthLoading, openAuthModal]);
+  }, []);
 
   const notify = (msg: string) => {
     setToastMessage(msg);
@@ -323,7 +307,7 @@ export function AppShell() {
             </div>
 
             {/* User Profile / Auth Action */}
-            {user ? (
+            {user && (
               <div className="flex items-center gap-2 rounded-xl border border-slate-200 bg-slate-50 px-2.5 py-1.5 dark:border-slate-800 dark:bg-slate-900/60">
                 <span className="grid size-6 place-items-center rounded-full bg-gradient-to-tr from-indigo-500 to-violet-500 text-[11px] font-bold text-white uppercase">
                   {user.username ? user.username.substring(0, 2) : 'US'}
@@ -345,15 +329,6 @@ export function AppShell() {
                   <LogOut size={14} />
                 </button>
               </div>
-            ) : (
-              <button
-                type="button"
-                onClick={openAuthModal}
-                className="flex items-center gap-1.5 rounded-xl bg-indigo-600 px-3.5 py-1.5 text-xs font-semibold text-white shadow-sm shadow-indigo-600/20 hover:bg-indigo-500 active:scale-[0.98] transition"
-              >
-                <UserIcon size={14} />
-                <span>Sign In</span>
-              </button>
             )}
           </div>
         </header>
@@ -366,13 +341,7 @@ export function AppShell() {
               <button type="button" onClick={loadData} className="ml-3 underline">Retry</button>
             </div>
           )}
-          {isAuthLoading ? (
-            <p role="status" className="py-12 text-center text-sm text-slate-500">Checking session...</p>
-          ) : isAuthenticated ? (
-            <Outlet />
-          ) : (
-            <p className="py-12 text-center text-sm text-slate-500">Sign in to load projects and deployments.</p>
-          )}
+          <Outlet />
         </main>
       </div>
 
@@ -399,7 +368,6 @@ export function AppShell() {
         deployments={deployments}
       />
 
-      <AuthModal />
     </div>
   );
 }

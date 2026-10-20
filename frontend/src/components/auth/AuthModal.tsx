@@ -1,19 +1,26 @@
 import React, { useState } from 'react';
-import { X, LogIn, UserPlus, Lock, Mail, User, AlertCircle, Loader2 } from 'lucide-react';
+import { LogIn, UserPlus, Lock, Mail, User, AlertCircle, Loader2 } from 'lucide-react';
+import { Navigate, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { api } from '../../services/api';
 
-export function AuthModal() {
-  const { isAuthModalOpen, closeAuthModal, login, register } = useAuth();
+export function AuthPage() {
+  const { isLoading, user, login, register } = useAuth();
+  const navigate = useNavigate();
   const [mode, setMode] = useState<'login' | 'register'>('login');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [username, setUsername] = useState('');
   const [fullName, setFullName] = useState('');
   const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  if (!isAuthModalOpen) return null;
+  if (isLoading) {
+    return <main className="grid min-h-screen place-items-center bg-slate-50 text-sm text-slate-500 dark:bg-slate-950">Checking session...</main>;
+  }
+
+  if (user) return <Navigate to="/" replace />;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -23,6 +30,7 @@ export function AuthModal() {
     try {
       if (mode === 'login') {
         await login({ email, password });
+        navigate('/', { replace: true });
       } else {
         if (!username) {
           setError('Username is required for registration.');
@@ -30,8 +38,12 @@ export function AuthModal() {
           return;
         }
         await register({ email, password, username, full_name: fullName });
+        setMode('login');
+        setSuccess('Account created. Sign in with your new credentials.');
       }
+      setError(null);
     } catch (err: unknown) {
+      setSuccess(null);
       if (err instanceof Error) {
         setError(err.message);
       } else {
@@ -47,17 +59,13 @@ export function AuthModal() {
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur-md animate-in fade-in duration-200">
-      <div className="relative w-full max-w-md overflow-hidden rounded-3xl border border-slate-200 bg-white p-6 shadow-2xl transition-colors duration-200 dark:border-slate-800 dark:bg-slate-900">
-        {/* Close Button */}
-        <button
-          type="button"
-          onClick={closeAuthModal}
-          className="absolute top-4 right-4 rounded-xl p-2 text-slate-400 hover:bg-slate-100 hover:text-slate-700 dark:hover:bg-slate-800 dark:hover:text-white transition"
-        >
-          <X size={18} />
-        </button>
-
+    <main className="flex min-h-screen items-center justify-center bg-slate-50 px-4 py-10 dark:bg-slate-950">
+      <div className="w-full max-w-md">
+        <a href="/" className="mb-6 flex items-center justify-center gap-2 text-sm font-bold text-slate-900 dark:text-white">
+          <span className="grid size-8 place-items-center rounded-lg bg-indigo-600 text-white">N</span>
+          NexusDeploy
+        </a>
+        <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white p-6 shadow-xl dark:border-slate-800 dark:bg-slate-900 sm:p-8">
         {/* Modal Header */}
         <div className="mb-6 text-center">
           <div className="mx-auto mb-3 flex size-12 items-center justify-center rounded-2xl bg-indigo-50 text-indigo-600 dark:bg-indigo-500/10 dark:text-indigo-400">
@@ -114,6 +122,11 @@ export function AuthModal() {
           <div className="mb-4 flex items-center gap-2 rounded-xl border border-rose-200 bg-rose-50 p-3 text-xs text-rose-700 dark:border-rose-500/30 dark:bg-rose-500/10 dark:text-rose-300">
             <AlertCircle size={16} className="shrink-0" />
             <span>{error}</span>
+          </div>
+        )}
+        {success && (
+          <div role="status" className="mb-4 rounded-xl border border-emerald-200 bg-emerald-50 p-3 text-xs text-emerald-700 dark:border-emerald-500/30 dark:bg-emerald-500/10 dark:text-emerald-300">
+            {success}
           </div>
         )}
 
@@ -212,6 +225,7 @@ export function AuthModal() {
             type="button"
             onClick={() => {
               setError(null);
+              setSuccess(null);
               setMode(mode === 'login' ? 'register' : 'login');
             }}
             className="text-xs text-indigo-600 hover:underline dark:text-indigo-400 font-medium"
@@ -221,7 +235,8 @@ export function AuthModal() {
               : 'Already have an account? Sign In'}
           </button>
         </div>
+        </section>
       </div>
-    </div>
+    </main>
   );
 }

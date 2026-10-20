@@ -1,7 +1,7 @@
 import axios from 'axios';
 import { env } from '../lib/env';
 
-export const http = axios.create({ baseURL: env.apiUrl, timeout: 15_000 });
+export const http = axios.create({ baseURL: env.apiUrl, timeout: 15_000, withCredentials: true });
 
 http.interceptors.request.use((config) => {
   const token = sessionStorage.getItem('nexus_token');

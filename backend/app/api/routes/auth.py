@@ -1,6 +1,4 @@
 from typing import Annotated
-from urllib.parse import urlencode
-
 from fastapi import (
     APIRouter,
     Depends,
@@ -156,19 +154,10 @@ async def google_oauth_callback(request: Request, response: Response, db: AsyncD
         max_age=7 * 24 * 60 * 60        # 7-day warranty duration
     )
 
-    frontend_url = getattr(settings, "REACT_APP_FRONTEND_URL", "http://localhost:3000")
-    
-    query = urlencode({
-        "access_token": result["access_token"],
-        "username": userinfo.get("name") or "",
-        "provider": "google",
-    })
-    
-    '''
-        TODO: Handle of frontend auth here append
-    '''
+    frontend_url = settings.REACT_APP_FRONTEND_URL.rstrip("/")
+
     return RedirectResponse(
-        url=f"http://{frontend_url.rstrip('/')}",
+        url=f"{frontend_url}/?oauth=success",
         status_code=status.HTTP_302_FOUND,
         headers=response.headers
     )
